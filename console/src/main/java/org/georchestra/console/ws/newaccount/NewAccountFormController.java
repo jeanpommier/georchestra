@@ -177,7 +177,7 @@ public final class NewAccountFormController {
 		model.addAttribute("orgTypes", this.getOrgTypes());
 
 		// uid validation
-		if (this.validation.validateUserFieldWithSpecificMsg("uid", formBean.getUid(), result)) {
+		if (validation.validateUserFieldWithSpecificMsg("uid", formBean.getUid(), result)) {
 			// A valid user identifier (uid) can only contain characters, numbers, hyphens or dot.
 			// It must begin with a character.
 			Pattern regexp = Pattern.compile("[a-zA-Z][a-zA-Z0-9.-]*");
@@ -187,11 +187,11 @@ public final class NewAccountFormController {
 		}
 
 		// first name and surname validation
-		this.validation.validateUserFieldWithSpecificMsg("firstName", formBean.getFirstName(), result);
-		this.validation.validateUserFieldWithSpecificMsg("surname", formBean.getSurname(), result);
+		validation.validateUserFieldWithSpecificMsg("firstName", formBean.getFirstName(), result);
+		validation.validateUserFieldWithSpecificMsg("surname", formBean.getSurname(), result);
 
 		// email validation
-		if (this.validation.validateUserFieldWithSpecificMsg("email", formBean.getEmail(), result)) {
+		if (validation.validateUserFieldWithSpecificMsg("email", formBean.getEmail(), result)) {
 			if (!EmailValidator.getInstance().isValid(formBean.getEmail())) {
 				result.rejectValue("email", "email.error.invalidFormat", "Invalid Format");
 			}
@@ -204,30 +204,30 @@ public final class NewAccountFormController {
         RecaptchaUtils.validate(reCaptchaParameters, formBean.getRecaptcha_response_field(), result);
 
 		// Validate remaining fields
-		this.validation.validateUserField("phone", formBean.getPhone(), result);
-		this.validation.validateUserField("title", formBean.getTitle(), result);
-		this.validation.validateUserField("description", formBean.getDescription(), result);
+		validation.validateUserField("phone", formBean.getPhone(), result);
+		validation.validateUserField("title", formBean.getTitle(), result);
+		validation.validateUserField("description", formBean.getDescription(), result);
 
 		// Create org if needed
 		if(formBean.getCreateOrg() && ! result.hasErrors()){
 			try {
 
 				// Check required fields
-				this.validation.validateOrgField("name", formBean.getOrgName(), result);
-				this.validation.validateOrgField("shortName", formBean.getOrgShortName(), result);
-				this.validation.validateOrgField("address", formBean.getOrgAddress(), result);
-				this.validation.validateOrgField("type", formBean.getOrgType(), result);
+				validation.validateOrgField("name", formBean.getOrgName(), result);
+				validation.validateOrgField("shortName", formBean.getOrgShortName(), result);
+				validation.validateOrgField("address", formBean.getOrgAddress(), result);
+				validation.validateOrgField("type", formBean.getOrgType(), result);
 
 				Org org = new Org();
 				OrgExt orgExt = new OrgExt();
 
 				// Generate textual identifier based on name
-				String orgId = this.orgDao.generateId(formBean.getOrgName());
+				String orgId = orgDao.generateId(formBean.getOrgName());
 				org.setId(orgId);
 				orgExt.setId(orgId);
 
 				// Generate numeric identifier
-				orgExt.setNumericId(this.orgDao.generateNumericId());
+				orgExt.setNumericId(orgDao.generateNumericId());
 
 				// Store name, short name, orgType and address
 				org.setName(formBean.getOrgName());
@@ -245,8 +245,8 @@ public final class NewAccountFormController {
 
 				// Persist changes to LDAP server
 				if(!result.hasErrors()){
-					this.orgDao.insert(org);
-					this.orgDao.insert(orgExt);
+					orgDao.insert(org);
+					orgDao.insert(orgExt);
 
 					// Set real org identifier in form
 					formBean.setOrg(orgId);
@@ -257,7 +257,7 @@ public final class NewAccountFormController {
 				throw new IOException(e);
 			}
 		} else {
-			this.validation.validateUserField("org", formBean.getOrg(), result);
+			validation.validateUserField("org", formBean.getOrg(), result);
 		}
 
 		if(result.hasErrors())
@@ -280,38 +280,38 @@ public final class NewAccountFormController {
 			if(!formBean.getOrg().equals("-"))
 				account.setOrg(formBean.getOrg());
 
-			String roleID = this.moderator.moderatedSignup() ? Role.PENDING : Role.USER;
+			String roleID = moderator.moderatedSignup() ? Role.PENDING : Role.USER;
 
-			this.accountDao.insert(account, roleID, request.getHeader("sec-username"));
+			accountDao.insert(account, roleID, request.getHeader("sec-username"));
 
 			final ServletContext servletContext = request.getSession().getServletContext();
 
 			// List of recipients for notification email
-			List<String> recipients = this.accountDao.findByRole("SUPERUSER").stream()
+			List<String> recipients = accountDao.findByRole("SUPERUSER").stream()
 					.map(x -> x.getEmail())
 					.collect(Collectors.toCollection(LinkedList::new));
 
 			// Retrieve emails of delegated admin if org is specified
 			if(!formBean.getOrg().equals("-")) {
 				// and a delegation is defined
-				List<DelegationEntry> delegations = this.advancedDelegationDao.findByOrg(formBean.getOrg());
+				List<DelegationEntry> delegations = advancedDelegationDao.findByOrg(formBean.getOrg());
 
 				for (DelegationEntry delegation : delegations) {
-					Account delegatedAdmin = this.accountDao.findByUID(delegation.getUid());
+					Account delegatedAdmin = accountDao.findByUID(delegation.getUid());
 					recipients.add(delegatedAdmin.getEmail());
 				}
 			}
 
 			// Select email template based on moderation configuration for admin and user and send emails
-			if(this.moderator.moderatedSignup()){
-				this.emailFactory.sendNewAccountRequiresModerationEmail(servletContext, recipients.toArray(new String[recipients.size()]),
+			if(moderator.moderatedSignup()){
+				emailFactory.sendNewAccountRequiresModerationEmail(servletContext, recipients.toArray(new String[recipients.size()]),
 						account.getCommonName(), account.getUid(), account.getEmail());
-				this.emailFactory.sendAccountCreationInProcessEmail(servletContext, new String[]{account.getEmail()},
+				emailFactory.sendAccountCreationInProcessEmail(servletContext, new String[]{account.getEmail()},
 						account.getCommonName(), account.getUid());
 			} else {
-				this.emailFactory.sendNewAccountNotificationEmail(servletContext,recipients.toArray(new String[recipients.size()]),
+				emailFactory.sendNewAccountNotificationEmail(servletContext,recipients.toArray(new String[recipients.size()]),
 						account.getCommonName(), account.getUid(), account.getEmail());
-				this.emailFactory.sendAccountWasCreatedEmail(servletContext, new String[]{account.getEmail()},
+				emailFactory.sendAccountWasCreatedEmail(servletContext, new String[]{account.getEmail()},
 						account.getCommonName(), account.getUid());
 			}
 			sessionStatus.setComplete();
@@ -326,7 +326,7 @@ public final class NewAccountFormController {
 		} catch (DuplicatedUidException e) {
 
 			try {
-				String proposedUid = this.accountDao.generateUid( formBean.getUid() );
+				String proposedUid = accountDao.generateUid( formBean.getUid() );
 
 				formBean.setUid(proposedUid);
 

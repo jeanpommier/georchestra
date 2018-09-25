@@ -181,11 +181,11 @@ public class EditUserDetailsFormController {
 		if(!StringUtils.hasLength( formBean.getSurname() ) && this.validation.isUserFieldRequired("surname"))
 			resultErrors.rejectValue("surname", "surname.error.required", "required");
 
-		this.validation.validateUserField("phone", formBean.getPhone(), resultErrors);
-		this.validation.validateUserField("facsimile", formBean.getFacsimile(), resultErrors);
-		this.validation.validateUserField("title", formBean.getTitle(), resultErrors);
-		this.validation.validateUserField("description", formBean.getDescription(), resultErrors);
-		this.validation.validateUserField("postalAddress", formBean.getPostalAddress(), resultErrors);
+		validation.validateUserField("phone", formBean.getPhone(), resultErrors);
+		validation.validateUserField("facsimile", formBean.getFacsimile(), resultErrors);
+		validation.validateUserField("title", formBean.getTitle(), resultErrors);
+		validation.validateUserField("description", formBean.getDescription(), resultErrors);
+		validation.validateUserField("postalAddress", formBean.getPostalAddress(), resultErrors);
 
 		if(resultErrors.hasErrors())
 			return "editUserDetailsForm";
@@ -194,7 +194,7 @@ public class EditUserDetailsFormController {
 		try {
 
 			Account account = modify(this.accountDao.findByUID(request.getHeader("sec-username")), formBean);
-			this.accountDao.update(account, request.getHeader("sec-username"));
+			accountDao.update(account, request.getHeader("sec-username"));
 
 			model.addAttribute("success", true);
 			model.addAttribute("org", orgToJson(this.orgsDao.findForUser(account.getUid())));
