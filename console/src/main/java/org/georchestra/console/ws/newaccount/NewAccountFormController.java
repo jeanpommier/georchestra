@@ -177,9 +177,7 @@ public final class NewAccountFormController {
 		model.addAttribute("orgTypes", this.getOrgTypes());
 
 		// uid validation
-		if(!this.validation.validateUserField("uid", formBean.getUid())){
-			result.rejectValue("uid", "uid.error.required", "required");
-		} else {
+		if (this.validation.validateUserFieldWithSpecificMsg("uid", formBean.getUid(), result)) {
 			// A valid user identifier (uid) can only contain characters, numbers, hyphens or dot.
 			// It must begin with a character.
 			Pattern regexp = Pattern.compile("[a-zA-Z][a-zA-Z0-9.-]*");
@@ -189,16 +187,15 @@ public final class NewAccountFormController {
 		}
 
 		// first name and surname validation
-		if(!this.validation.validateUserField("firstName", formBean.getFirstName()))
-			result.rejectValue("firstName", "firstName.error.required", "required");
-		if(!this.validation.validateUserField("surname", formBean.getSurname()))
-			result.rejectValue("surname", "surname.error.required", "required");
+		this.validation.validateUserFieldWithSpecificMsg("firstName", formBean.getFirstName(), result);
+		this.validation.validateUserFieldWithSpecificMsg("surname", formBean.getSurname(), result);
 
 		// email validation
-		if (!this.validation.validateUserField("email", formBean.getEmail()))
-			result.rejectValue("email", "email.error.required", "required");
-		else if (!EmailValidator.getInstance().isValid(formBean.getEmail()))
-			result.rejectValue("email", "email.error.invalidFormat", "Invalid Format");
+		if (this.validation.validateUserFieldWithSpecificMsg("email", formBean.getEmail(), result)) {
+			if (!EmailValidator.getInstance().isValid(formBean.getEmail())) {
+				result.rejectValue("email", "email.error.invalidFormat", "Invalid Format");
+			}
+		}
 
 		// password validation
 		PasswordUtils.validate(formBean.getPassword(), formBean.getConfirmPassword(), result);

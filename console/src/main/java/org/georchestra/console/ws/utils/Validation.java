@@ -131,7 +131,15 @@ public class Validation {
 			errors.rejectValue(field, "error.required", "required");
 	}
 
-	public boolean validateUserField(String field, String value){
+	public boolean validateUserFieldWithSpecificMsg (String field, String value, Errors errors) {
+		if(!validateUserField(field, value)) {
+			errors.rejectValue(field, String.format("%s.error.required", field), "required");
+			return false;
+		}
+		return true;
+	}
+
+	protected boolean validateUserField(String field, String value){
 		return !this.isUserFieldRequired(field) || StringUtils.hasLength(value);
 	}
 
