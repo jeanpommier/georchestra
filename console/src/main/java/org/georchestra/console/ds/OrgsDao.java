@@ -415,7 +415,7 @@ public class OrgsDao {
 
     private class ContextMapperSecuringReferenceAndMappingAttributes<T extends ReferenceAware>  implements ContextMapper<T> {
 
-        AttributesMapper<T> attributesMapper;
+        private AttributesMapper<T> attributesMapper;
 
         public ContextMapperSecuringReferenceAndMappingAttributes(AttributesMapper<T> attributesMapper) {
             this.attributesMapper = attributesMapper;
