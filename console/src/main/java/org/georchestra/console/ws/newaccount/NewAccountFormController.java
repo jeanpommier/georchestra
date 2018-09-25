@@ -26,12 +26,17 @@ import org.apache.commons.validator.routines.EmailValidator;
 import org.georchestra.console.bs.Moderator;
 import org.georchestra.console.bs.ReCaptchaParameters;
 import org.georchestra.console.dao.AdvancedDelegationDao;
-import org.georchestra.console.ds.*;
+import org.georchestra.console.ds.AccountDao;
+import org.georchestra.console.ds.DataServiceException;
+import org.georchestra.console.ds.DuplicatedEmailException;
+import org.georchestra.console.ds.DuplicatedUidException;
+import org.georchestra.console.ds.OrgsDao;
+import org.georchestra.console.ds.RoleDao;
 import org.georchestra.console.dto.Account;
 import org.georchestra.console.dto.AccountFactory;
-import org.georchestra.console.dto.Role;
 import org.georchestra.console.dto.Org;
 import org.georchestra.console.dto.OrgExt;
+import org.georchestra.console.dto.Role;
 import org.georchestra.console.mailservice.EmailFactory;
 import org.georchestra.console.model.DelegationEntry;
 import org.georchestra.console.ws.utils.PasswordUtils;
@@ -45,8 +50,8 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.bind.support.SessionStatus;
 
@@ -56,9 +61,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Manages the UI Account Form.
@@ -278,13 +290,10 @@ public final class NewAccountFormController {
 			final ServletContext servletContext = request.getSession().getServletContext();
 
 			// List of recipients for notification email
-			List<String> recipients = new LinkedList<>();
+			List<String> recipients = this.accountDao.findByRole("SUPERUSER").stream()
+					.map(x -> x.getEmail())
+					.collect(Collectors.toCollection(LinkedList::new));
 
-			// retrieve emails of all users with SUPERUSER role
-			List<Account> admins = this.accountDao.findByRole("SUPERUSER");
-			for(Account admin : admins) {
-				recipients.add(admin.getEmail());
-			}
 			// Retrieve emails of delegated admin if org is specified
 			if(!formBean.getOrg().equals("-")) {
 				// and a delegation is defined
