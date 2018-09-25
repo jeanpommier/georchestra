@@ -338,9 +338,7 @@ public final class NewAccountFormController {
 				throw new IOException(e);
 			}
 
-		} catch (DataServiceException e) {
-			throw new IOException(e);
-		} catch (MessagingException e) {
+		} catch (DataServiceException|MessagingException e) {
 			throw new IOException(e);
 		}
 	}
