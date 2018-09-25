@@ -135,14 +135,6 @@ public class Validation {
 		return !this.isUserFieldRequired(field) || StringUtils.hasLength(value);
 	}
 
-	public boolean validateUserField(String field, JSONObject json){
-		try {
-			return !this.isUserFieldRequired(field) || (json.has(field) && StringUtils.hasLength(json.getString(field)));
-		} catch (JSONException e) {
-			return false;
-		}
-	}
-
 	public boolean validateOrgField(String field, JSONObject json){
 		try {
 			return !this.isOrgFieldRequired(field) || (json.has(field) && StringUtils.hasLength(json.getString(field)));
