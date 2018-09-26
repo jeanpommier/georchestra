@@ -175,11 +175,8 @@ public class EditUserDetailsFormController {
 		}
 
 		// Validate first name and surname
-		if(!StringUtils.hasLength(formBean.getFirstName()) && this.validation.isUserFieldRequired("firstName"))
-			resultErrors.rejectValue("firstName", "firstName.error.required", "required");
-
-		if(!StringUtils.hasLength( formBean.getSurname() ) && this.validation.isUserFieldRequired("surname"))
-			resultErrors.rejectValue("surname", "surname.error.required", "required");
+		validation.validateUserFieldWithSpecificMsg("firstName", formBean.getFirstName(), resultErrors);
+		validation.validateUserFieldWithSpecificMsg("surname", formBean.getSurname(), resultErrors);
 
 		validation.validateUserField("phone", formBean.getPhone(), resultErrors);
 		validation.validateUserField("facsimile", formBean.getFacsimile(), resultErrors);
