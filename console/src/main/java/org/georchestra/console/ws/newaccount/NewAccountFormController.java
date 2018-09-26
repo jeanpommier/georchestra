@@ -146,16 +146,16 @@ public final class NewAccountFormController {
 		HttpSession session = request.getSession();
 
 		// Populate orgs droplist
-		model.addAttribute("orgs", this.getOrgs());
+		model.addAttribute("orgs", getOrgs());
 		// Populate org type droplist
-		model.addAttribute("orgTypes", this.getOrgTypes());
+		model.addAttribute("orgTypes", getOrgTypes());
 
-		session.setAttribute("reCaptchaPublicKey", this.reCaptchaParameters.getPublicKey());
-		for(String f: this.validation.getRequiredUserFields())
+		session.setAttribute("reCaptchaPublicKey", reCaptchaParameters.getPublicKey());
+		for(String f: validation.getRequiredUserFields())
 			session.setAttribute(f + "Required", "true");
 
 		// Convert to camelcase with 'org' prefix 'shortName' --> 'orgShortName'
-		for(String f: this.validation.getRequiredOrgFields())
+		for(String f: validation.getRequiredOrgFields())
 			session.setAttribute("org" + f.substring(0, 1).toUpperCase() + f.substring(1, f.length()) + "Required",
 					"true");
 
@@ -185,10 +185,10 @@ public final class NewAccountFormController {
 			throws IOException, SQLException {
 
 		// Populate orgs droplist
-		model.addAttribute("orgs", this.getOrgs());
+		model.addAttribute("orgs", getOrgs());
 
 		// Populate org type droplist
-		model.addAttribute("orgTypes", this.getOrgTypes());
+		model.addAttribute("orgTypes", getOrgTypes());
 
 		// uid validation
 		if (validation.validateUserFieldWithSpecificMsg("uid", formBean.getUid(), result)) {
@@ -366,7 +366,7 @@ public final class NewAccountFormController {
 	 * Create a sorted Map of organization sorted by human readable name
      */
 	private Map<String, String> getOrgs() {
-		return this.orgDao.findValidated().stream()
+		return orgDao.findValidated().stream()
 				.sorted((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()))
 				.collect(Collectors.toMap(Org::getId, Org::getName, (oldValue, newValue) -> oldValue, LinkedHashMap::new));
 	}

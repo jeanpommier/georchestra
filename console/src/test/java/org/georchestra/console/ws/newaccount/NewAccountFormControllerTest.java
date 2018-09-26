@@ -83,28 +83,22 @@ public class NewAccountFormControllerTest {
     	rep.setPrivateKey("privateKey");
 
         ctrl = createToTest("");
-        ctrl.setAccountDao(accountDao);
-        ctrl.setOrgDao(org);
-        ctrl.setAdvancedDelegationDao(advancedDelegationDao);
-        ctrl.setEmailFactory(efi);
 
         // Mock admin account
         DistinguishedName dn = new DistinguishedName();
         dn.add(new LdapRdn("ou=users"));
         dn.add("uid", "testadmin");
-        this.adminAccount =  AccountFactory.createBrief("testadmin", "monkey123", "Test", "ADmin",
+        adminAccount =  AccountFactory.createBrief("testadmin", "monkey123", "Test", "ADmin",
                 "postmastrer@localhost", "+33123456789", "admin", "");
-        this.request.addHeader("sec-username", "testadmin"); // Set user connected through http header
+        request.addHeader("sec-username", "testadmin"); // Set user connected through http header
         try {
-            Mockito.when(this.accountDao.findByUID(eq("testadmin"))).thenReturn(this.adminAccount);
-        } catch (DataServiceException e) {
-            assertTrue(false);
-        } catch (NameNotFoundException e) {
+            Mockito.when(accountDao.findByUID(eq("testadmin"))).thenReturn(adminAccount);
+        } catch (DataServiceException | NameNotFoundException e) {
             assertTrue(false);
         }
 
         String[] orgTypes = {"Association", "Company", "Non-governmental organization"};
-        Mockito.when(this.org.getOrgTypeValues()).thenReturn(orgTypes);
+        Mockito.when(org.getOrgTypeValues()).thenReturn(orgTypes);
     }
 
     @After
