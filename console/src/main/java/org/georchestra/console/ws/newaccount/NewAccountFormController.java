@@ -145,10 +145,7 @@ public final class NewAccountFormController {
 
 		HttpSession session = request.getSession();
 
-		// Populate orgs droplist
-		model.addAttribute("orgs", getOrgs());
-		// Populate org type droplist
-		model.addAttribute("orgTypes", getOrgTypes());
+		populateOrgsAndOrgTypes(model);
 
 		session.setAttribute("reCaptchaPublicKey", reCaptchaParameters.getPublicKey());
 		for(String f: validation.getRequiredUserFields())
@@ -184,11 +181,7 @@ public final class NewAccountFormController {
 						 Model model)
 			throws IOException, SQLException {
 
-		// Populate orgs droplist
-		model.addAttribute("orgs", getOrgs());
-
-		// Populate org type droplist
-		model.addAttribute("orgTypes", getOrgTypes());
+		populateOrgsAndOrgTypes(model);
 
 		// uid validation
 		if (validation.validateUserFieldWithSpecificMsg("uid", formBean.getUid(), result)) {
@@ -355,6 +348,11 @@ public final class NewAccountFormController {
 		} catch (DataServiceException|MessagingException e) {
 			throw new IOException(e);
 		}
+	}
+
+	private void populateOrgsAndOrgTypes(Model model) {
+		model.addAttribute("orgs", getOrgs());
+		model.addAttribute("orgTypes", getOrgTypes());
 	}
 
 	private Map<String, String> getOrgTypes() {
