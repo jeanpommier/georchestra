@@ -259,4 +259,6 @@
     <constructor-arg value="console"/>
   </bean>
 
+  <bean id="passwordUtils" class="org.georchestra.console.ws.utils.PasswordUtils"/>
+
 </beans>

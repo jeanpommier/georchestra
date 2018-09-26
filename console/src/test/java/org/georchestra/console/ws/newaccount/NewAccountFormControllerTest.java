@@ -1,23 +1,20 @@
 package org.georchestra.console.ws.newaccount;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.mockito.Matchers.eq;
-
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
-
+import org.apache.commons.validator.routines.EmailValidator;
 import org.georchestra.console.ReCaptchaV2;
 import org.georchestra.console.bs.Moderator;
 import org.georchestra.console.bs.ReCaptchaParameters;
 import org.georchestra.console.dao.AdvancedDelegationDao;
-import org.georchestra.console.ds.*;
+import org.georchestra.console.ds.AccountDao;
+import org.georchestra.console.ds.DataServiceException;
+import org.georchestra.console.ds.DuplicatedEmailException;
+import org.georchestra.console.ds.DuplicatedUidException;
+import org.georchestra.console.ds.OrgsDao;
+import org.georchestra.console.ds.RoleDao;
 import org.georchestra.console.dto.Account;
 import org.georchestra.console.dto.AccountFactory;
-
 import org.georchestra.console.mailservice.EmailFactory;
+import org.georchestra.console.ws.utils.PasswordUtils;
 import org.georchestra.console.ws.utils.Validation;
 import org.junit.After;
 import org.junit.Before;
@@ -29,9 +26,20 @@ import org.springframework.ldap.core.LdapRdn;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.MapBindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.support.SessionStatus;
-import org.apache.commons.validator.routines.EmailValidator;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+
+import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.eq;
 
 public class NewAccountFormControllerTest {
 
@@ -48,6 +56,7 @@ public class NewAccountFormControllerTest {
     private MockHttpServletRequest request = new MockHttpServletRequest();
     private Model UiModel = Mockito.mock(Model.class);
     private Account adminAccount;
+    private Validation validation;
 
     AccountFormBean formBean = Mockito.mock(AccountFormBean.class);
     BindingResult result = Mockito.mock(BindingResult.class);
@@ -75,7 +84,7 @@ public class NewAccountFormControllerTest {
     	rep.setVerifyUrl("https://localhost");
     	rep.setPrivateKey("privateKey");
 
-        ctrl = new NewAccountFormController(mod, rep, new Validation(""));
+        ctrl = createToTest("");
         ctrl.setAccountDao(accountDao);
         ctrl.setOrgDao(org);
         ctrl.setAdvancedDelegationDao(advancedDelegationDao);
@@ -291,13 +300,11 @@ public class NewAccountFormControllerTest {
                 + "recaptcha_response_field=wrong]"));
     }
 
-
     /**
      * Tests email address with new domains like .bzh or .alsace
      */
     @Test
     public void testNewDomains(){
-
         EmailValidator validator = EmailValidator.getInstance();
         // Test valid email address
         assertTrue(validator.isValid("mael@bretagne.bzh"));
@@ -307,6 +314,62 @@ public class NewAccountFormControllerTest {
         // Test invalid email address
         assertFalse(validator.isValid("test@domain.no-existent"));
         assertFalse(validator.isValid("test@domain.qsdfgryzeh"));
+    }
 
+    @Test
+    public void requiredFieldsUndefined() throws IOException, SQLException {
+        NewAccountFormController toTest = createToTest("firstName,surname,org,orgType");
+        AccountFormBean formBean = new AccountFormBean();
+        formBean.setPassword("");
+        formBean.setConfirmPassword("");
+        BindingResult resultErrors = new MapBindingResult(new HashMap<>(), "errors");
+
+        toTest.create(request, formBean, "", resultErrors, status, UiModel);
+
+        assertEquals("required", resultErrors.getFieldError("firstName").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("surname").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("email").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("uid").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("recaptcha_response_field").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("org").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("password").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("confirmPassword").getDefaultMessage());
+
+        assertEquals(8, resultErrors.getFieldErrorCount());
+    }
+
+    @Test
+    public void specialValidators() throws IOException, SQLException {
+        NewAccountFormController toTest = createToTest("firstName,surname,org,orgType,phone,title,description");
+        AccountFormBean formBean = new AccountFormBean();
+        formBean.setUid("I am no compliant !!!!");
+        formBean.setEmail("I am no compliant !!!!");
+        formBean.setPassword("Pré$ident");
+        formBean.setConfirmPassword("lapinmalin");
+        BindingResult resultErrors = new MapBindingResult(new HashMap<>(), "errors");
+
+        toTest.create(request, formBean, "", resultErrors, status, UiModel);
+
+        assertEquals("uid.error.invalid", resultErrors.getFieldError("uid").getCode());
+        assertEquals("email.error.invalidFormat", resultErrors.getFieldError("email").getCode());
+        assertEquals("confirmPassword.error.pwdNotEquals", resultErrors.getFieldError("confirmPassword").getCode());
+        assertEquals("required", resultErrors.getFieldError("phone").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("title").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("description").getDefaultMessage());
+    }
+
+    private NewAccountFormController createToTest(String requiredFields) {
+        validation = new Validation(requiredFields);
+        PasswordUtils passwordUtils = new PasswordUtils();
+        passwordUtils.setValidation(validation);
+
+        NewAccountFormController toTest = new NewAccountFormController(mod, rep, validation);
+        toTest.setAccountDao(accountDao);
+        toTest.setOrgDao(org);
+        toTest.setAdvancedDelegationDao(advancedDelegationDao);
+        toTest.setEmailFactory(efi);
+        toTest.setRoleDao(roleDao);
+        toTest.passwordUtils = passwordUtils;
+        return toTest;
     }
 }

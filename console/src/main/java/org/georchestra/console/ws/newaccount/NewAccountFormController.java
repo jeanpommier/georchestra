@@ -103,6 +103,9 @@ public final class NewAccountFormController {
 	@Autowired
 	private RoleDao roleDao;
 
+	@Autowired
+	protected PasswordUtils passwordUtils;
+
 	private Moderator moderator;
 
 	private ReCaptchaParameters reCaptchaParameters;
@@ -198,7 +201,7 @@ public final class NewAccountFormController {
 		}
 
 		// password validation
-		PasswordUtils.validate(formBean.getPassword(), formBean.getConfirmPassword(), result);
+		passwordUtils.validate(formBean.getPassword(), formBean.getConfirmPassword(), result);
 
 		// Check captcha
         RecaptchaUtils.validate(reCaptchaParameters, formBean.getRecaptcha_response_field(), result);
