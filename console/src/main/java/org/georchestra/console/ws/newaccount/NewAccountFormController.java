@@ -31,7 +31,6 @@ import org.georchestra.console.ds.DataServiceException;
 import org.georchestra.console.ds.DuplicatedEmailException;
 import org.georchestra.console.ds.DuplicatedUidException;
 import org.georchestra.console.ds.OrgsDao;
-import org.georchestra.console.ds.RoleDao;
 import org.georchestra.console.dto.Account;
 import org.georchestra.console.dto.AccountFactory;
 import org.georchestra.console.dto.Org;
@@ -74,10 +73,6 @@ import java.util.stream.Collectors;
 /**
  * Manages the UI Account Form.
  *
- * <p>
- *
- * </p>
- *
  * @author Mauricio Pazos
  *
  */
@@ -98,9 +93,6 @@ public final class NewAccountFormController {
 
 	@Autowired
 	private AdvancedDelegationDao advancedDelegationDao;
-
-	@Autowired
-	private RoleDao roleDao;
 
 	@Autowired
 	protected PasswordUtils passwordUtils;
@@ -136,10 +128,6 @@ public final class NewAccountFormController {
 		this.advancedDelegationDao = advancedDelegationDao;
 	}
 
-	public void setRoleDao(RoleDao roleDao) {
-		this.roleDao = roleDao;
-	}
-
 	@ModelAttribute("accountFormBean")
 	public AccountFormBean getAccountFormBean() {
 		return new AccountFormBean();
@@ -156,7 +144,6 @@ public final class NewAccountFormController {
 	public String setupForm(HttpServletRequest request, Model model) throws IOException{
 
 		HttpSession session = request.getSession();
-		AccountFormBean formBean = new AccountFormBean();
 
 		// Populate orgs droplist
 		model.addAttribute("orgs", this.getOrgs());

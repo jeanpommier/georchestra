@@ -10,7 +10,6 @@ import org.georchestra.console.ds.DataServiceException;
 import org.georchestra.console.ds.DuplicatedEmailException;
 import org.georchestra.console.ds.DuplicatedUidException;
 import org.georchestra.console.ds.OrgsDao;
-import org.georchestra.console.ds.RoleDao;
 import org.georchestra.console.dto.Account;
 import org.georchestra.console.dto.AccountFactory;
 import org.georchestra.console.mailservice.EmailFactory;
@@ -47,7 +46,6 @@ public class NewAccountFormControllerTest {
     private NewAccountFormController ctrl ;
     private AccountDao accountDao = Mockito.mock(AccountDao.class);
     private OrgsDao org = Mockito.mock(OrgsDao.class);
-    private RoleDao roleDao = Mockito.mock(RoleDao.class);
     private AdvancedDelegationDao advancedDelegationDao = Mockito.mock(AdvancedDelegationDao.class);
     private EmailFactory efi = Mockito.mock(EmailFactory.class);
     private Moderator  mod = new Moderator();
@@ -89,7 +87,6 @@ public class NewAccountFormControllerTest {
         ctrl.setOrgDao(org);
         ctrl.setAdvancedDelegationDao(advancedDelegationDao);
         ctrl.setEmailFactory(efi);
-        ctrl.setRoleDao(roleDao);
 
         // Mock admin account
         DistinguishedName dn = new DistinguishedName();
@@ -368,7 +365,6 @@ public class NewAccountFormControllerTest {
         toTest.setOrgDao(org);
         toTest.setAdvancedDelegationDao(advancedDelegationDao);
         toTest.setEmailFactory(efi);
-        toTest.setRoleDao(roleDao);
         toTest.passwordUtils = passwordUtils;
         return toTest;
     }
