@@ -62,12 +62,11 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -119,6 +118,31 @@ public final class NewAccountFormController {
 		this.moderator = moderatorRule;
 		this.reCaptchaParameters = reCaptchaParameters;
 		this.validation = validation;
+	}
+
+	public void setAccountDao(AccountDao accountDao) {
+		this.accountDao = accountDao;
+	}
+
+	public void setOrgDao(OrgsDao orgDao) {
+		this.orgDao = orgDao;
+	}
+
+	public void setEmailFactory(EmailFactory emailFactory) {
+		this.emailFactory = emailFactory;
+	}
+
+	public void setAdvancedDelegationDao(AdvancedDelegationDao advancedDelegationDao) {
+		this.advancedDelegationDao = advancedDelegationDao;
+	}
+
+	public void setRoleDao(RoleDao roleDao) {
+		this.roleDao = roleDao;
+	}
+
+	@ModelAttribute("accountFormBean")
+	public AccountFormBean getAccountFormBean() {
+		return new AccountFormBean();
 	}
 
 	@InitBinder
@@ -346,56 +370,17 @@ public final class NewAccountFormController {
 		}
 	}
 
-	@ModelAttribute("accountFormBean")
-	public AccountFormBean getAccountFormBean() {
-		return new AccountFormBean();
-	}
-
-
-	public Map<String, String> getOrgTypes() {
-		Map<String, String> orgTypes = new LinkedHashMap<String, String>();
-		for(String orgType: this.orgDao.getOrgTypeValues())
-			orgTypes.put(orgType, orgType);
-		return orgTypes;
+	private Map<String, String> getOrgTypes() {
+		return Arrays.stream(orgDao.getOrgTypeValues())
+				.collect(Collectors.toMap(Function.identity(), Function.identity()));
 	}
 
 	/**
 	 * Create a sorted Map of organization sorted by human readable name
-	 * @return
      */
-	public Map<String, String> getOrgs() {
-		List<Org> orgs = this.orgDao.findValidated();
-		Collections.sort(orgs, new Comparator<Org>() {
-			@Override
-			public int compare(Org o1, Org o2){
-				return  o1.getName().compareTo(o2.getName());
-			}
-		});
-
-		Map<String, String> orgsName = new LinkedHashMap<String, String>();
-		for(Org org : orgs)
-			orgsName.put(org.getId(), org.getName());
-
-		return orgsName;
-	}
-
-	public void setAccountDao(AccountDao accountDao) {
-		this.accountDao = accountDao;
-	}
-
-	public void setOrgDao(OrgsDao orgDao) {
-		this.orgDao = orgDao;
-	}
-
-	public void setEmailFactory(EmailFactory emailFactory) {
-		this.emailFactory = emailFactory;
-	}
-
-	public void setAdvancedDelegationDao(AdvancedDelegationDao advancedDelegationDao) {
-		this.advancedDelegationDao = advancedDelegationDao;
-	}
-
-	public void setRoleDao(RoleDao roleDao) {
-		this.roleDao = roleDao;
+	private Map<String, String> getOrgs() {
+		return this.orgDao.findValidated().stream()
+				.sorted((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()))
+				.collect(Collectors.toMap(Org::getId, Org::getName, (oldValue, newValue) -> oldValue, LinkedHashMap::new));
 	}
 }
