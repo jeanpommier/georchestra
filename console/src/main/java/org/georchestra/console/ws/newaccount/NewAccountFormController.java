@@ -183,48 +183,14 @@ public final class NewAccountFormController {
 
 		populateOrgsAndOrgTypes(model);
 
-		// uid validation
-		if (validation.validateUserFieldWithSpecificMsg("uid", formBean.getUid(), result)) {
-			// A valid user identifier (uid) can only contain characters, numbers, hyphens or dot.
-			// It must begin with a character.
-			Pattern regexp = Pattern.compile("[a-zA-Z][a-zA-Z0-9.-]*");
-			Matcher m = regexp.matcher(formBean.getUid());
-			if(!m.matches())
-				result.rejectValue("uid", "uid.error.invalid", "required");
+		validateFields(formBean, result);
+
+		if(result.hasErrors()) {
+			return "createAccountForm";
 		}
 
-		// first name and surname validation
-		validation.validateUserFieldWithSpecificMsg("firstName", formBean.getFirstName(), result);
-		validation.validateUserFieldWithSpecificMsg("surname", formBean.getSurname(), result);
-
-		// email validation
-		if (validation.validateUserFieldWithSpecificMsg("email", formBean.getEmail(), result)) {
-			if (!EmailValidator.getInstance().isValid(formBean.getEmail())) {
-				result.rejectValue("email", "email.error.invalidFormat", "Invalid Format");
-			}
-		}
-
-		// password validation
-		passwordUtils.validate(formBean.getPassword(), formBean.getConfirmPassword(), result);
-
-		// Check captcha
-        RecaptchaUtils.validate(reCaptchaParameters, formBean.getRecaptcha_response_field(), result);
-
-		// Validate remaining fields
-		validation.validateUserField("phone", formBean.getPhone(), result);
-		validation.validateUserField("title", formBean.getTitle(), result);
-		validation.validateUserField("description", formBean.getDescription(), result);
-
-		// Create org if needed
-		if(formBean.getCreateOrg() && ! result.hasErrors()){
+		if(formBean.getCreateOrg()) {
 			try {
-
-				// Check required fields
-				validation.validateOrgField("name", formBean.getOrgName(), result);
-				validation.validateOrgField("shortName", formBean.getOrgShortName(), result);
-				validation.validateOrgField("address", formBean.getOrgAddress(), result);
-				validation.validateOrgField("type", formBean.getOrgType(), result);
-
 				Org org = new Org();
 				OrgExt orgExt = new OrgExt();
 
@@ -244,32 +210,23 @@ public final class NewAccountFormController {
 
 				// Parse and store cities
 				orgCities = orgCities.trim();
-				if(orgCities.length() > 0)
+				if (orgCities.length() > 0)
 					org.setCities(Arrays.asList(orgCities.split("\\s*,\\s*")));
 
 				// Set default value
 				org.setStatus(Org.STATUS_PENDING);
 
 				// Persist changes to LDAP server
-				if(!result.hasErrors()){
-					orgDao.insert(org);
-					orgDao.insert(orgExt);
+				orgDao.insert(org);
+				orgDao.insert(orgExt);
 
-					// Set real org identifier in form
-					formBean.setOrg(orgId);
-				}
-
+				// Set real org identifier in form
+				formBean.setOrg(orgId);
 			} catch (Exception e) {
 				LOG.error(e.getMessage());
 				throw new IOException(e);
 			}
-		} else {
-			validation.validateUserField("org", formBean.getOrg(), result);
 		}
-
-		if(result.hasErrors())
-			return "createAccountForm";
-
 
 		// inserts the new account
 		try {
@@ -347,6 +304,49 @@ public final class NewAccountFormController {
 
 		} catch (DataServiceException|MessagingException e) {
 			throw new IOException(e);
+		}
+	}
+
+	private void validateFields(@ModelAttribute AccountFormBean formBean, BindingResult result) {
+		// uid validation
+		if (validation.validateUserFieldWithSpecificMsg("uid", formBean.getUid(), result)) {
+			// A valid user identifier (uid) can only contain characters, numbers, hyphens or dot.
+			// It must begin with a character.
+			Pattern regexp = Pattern.compile("[a-zA-Z][a-zA-Z0-9.-]*");
+			Matcher m = regexp.matcher(formBean.getUid());
+			if(!m.matches())
+				result.rejectValue("uid", "uid.error.invalid", "required");
+		}
+
+		// first name and surname validation
+		validation.validateUserFieldWithSpecificMsg("firstName", formBean.getFirstName(), result);
+		validation.validateUserFieldWithSpecificMsg("surname", formBean.getSurname(), result);
+
+		// email validation
+		if (validation.validateUserFieldWithSpecificMsg("email", formBean.getEmail(), result)) {
+			if (!EmailValidator.getInstance().isValid(formBean.getEmail())) {
+				result.rejectValue("email", "email.error.invalidFormat", "Invalid Format");
+			}
+		}
+
+		// password validation
+		passwordUtils.validate(formBean.getPassword(), formBean.getConfirmPassword(), result);
+
+		// Check captcha
+		RecaptchaUtils.validate(reCaptchaParameters, formBean.getRecaptcha_response_field(), result);
+
+		// Validate remaining fields
+		validation.validateUserField("phone", formBean.getPhone(), result);
+		validation.validateUserField("title", formBean.getTitle(), result);
+		validation.validateUserField("description", formBean.getDescription(), result);
+
+		if(formBean.getCreateOrg() && ! result.hasErrors()){
+			validation.validateOrgField("name", formBean.getOrgName(), result);
+			validation.validateOrgField("shortName", formBean.getOrgShortName(), result);
+			validation.validateOrgField("address", formBean.getOrgAddress(), result);
+			validation.validateOrgField("type", formBean.getOrgType(), result);
+		} else {
+			validation.validateUserField("org", formBean.getOrg(), result);
 		}
 	}
 
