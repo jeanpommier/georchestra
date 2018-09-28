@@ -384,10 +384,10 @@ public class NewAccountFormControllerTest {
 
         toTest.create(request, formBean, "", resultErrors, status, UiModel);
 
-        assertEquals("required", resultErrors.getFieldError("name").getDefaultMessage());
-        assertEquals("required", resultErrors.getFieldError("type").getDefaultMessage());
-        assertEquals("required", resultErrors.getFieldError("shortName").getDefaultMessage());
-        assertEquals("required", resultErrors.getFieldError("address").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("orgName").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("orgType").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("orgShortName").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("orgAddress").getDefaultMessage());
         assertEquals(4, resultErrors.getFieldErrorCount());
     }
 

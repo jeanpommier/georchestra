@@ -152,8 +152,9 @@ public class Validation {
 	}
 
 	public void validateOrgField (String field, String value, Errors errors) {
-		if(!validateOrgField(field, value))
-			errors.rejectValue(field, "error.required", "required");
+		if(!validateOrgField(field, value)) {
+			errors.rejectValue(String.format("org%s", StringUtils.capitalize(field)), "error.required", "required");
+		}
 	}
 
 	public boolean validateOrgField(String field, String value){
