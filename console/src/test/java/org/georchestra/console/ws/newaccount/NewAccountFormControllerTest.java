@@ -1,5 +1,6 @@
 package org.georchestra.console.ws.newaccount;
 
+import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.georchestra.console.ReCaptchaV2;
 import org.georchestra.console.bs.Moderator;
@@ -18,7 +19,12 @@ import org.georchestra.console.ws.utils.Validation;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.ldap.NameNotFoundException;
 import org.springframework.ldap.core.DistinguishedName;
 import org.springframework.ldap.core.LdapRdn;
@@ -29,7 +35,13 @@ import org.springframework.validation.MapBindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.support.SessionStatus;
 
+import javax.net.ssl.HttpsURLConnection;
+import java.io.BufferedInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.StringReader;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -38,27 +50,33 @@ import java.util.List;
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 
+@RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"javax.net.ssl.*"})
+@PrepareForTest({ReCaptchaV2.class, URL.class, DataOutputStream.class})
 public class NewAccountFormControllerTest {
 
     // Mocked objects needed by the controller default constructor
     private NewAccountFormController ctrl ;
-    private AccountDao accountDao = Mockito.mock(AccountDao.class);
-    private OrgsDao org = Mockito.mock(OrgsDao.class);
-    private AdvancedDelegationDao advancedDelegationDao = Mockito.mock(AdvancedDelegationDao.class);
-    private EmailFactory efi = Mockito.mock(EmailFactory.class);
+    private AccountDao accountDao = mock(AccountDao.class);
+    private OrgsDao org = mock(OrgsDao.class);
+    private AdvancedDelegationDao advancedDelegationDao = mock(AdvancedDelegationDao.class);
+    private EmailFactory efi = mock(EmailFactory.class);
     private Moderator  mod = new Moderator();
-    private ReCaptchaV2 rec = Mockito.mock(ReCaptchaV2.class);
+    private ReCaptchaV2 rec = mock(ReCaptchaV2.class);
     private ReCaptchaParameters rep = new ReCaptchaParameters();
     private MockHttpServletRequest request = new MockHttpServletRequest();
-    private Model UiModel = Mockito.mock(Model.class);
+    private Model UiModel = mock(Model.class);
     private Account adminAccount;
     private Validation validation;
 
-    AccountFormBean formBean = Mockito.mock(AccountFormBean.class);
-    BindingResult result = Mockito.mock(BindingResult.class);
-    SessionStatus status = Mockito.mock(SessionStatus.class);
+    AccountFormBean formBean = mock(AccountFormBean.class);
+    BindingResult result = mock(BindingResult.class);
+    SessionStatus status = mock(SessionStatus.class);
 
     private void configureLegitFormBean() {
         Mockito.when(formBean.getUid()).thenReturn("1");
@@ -73,7 +91,7 @@ public class NewAccountFormControllerTest {
         Mockito.when(formBean.getOrg()).thenReturn("geOrchestra testing team");
         Mockito.when(formBean.getDescription()).thenReturn("Bot Unit Testing");
 
-        Mockito.when(rec.isValid(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(true);
+        Mockito.when(rec.isValid(anyString(), anyString(), anyString())).thenReturn(true);
     }
 
     @Before
@@ -184,7 +202,7 @@ public class NewAccountFormControllerTest {
     public void testCreateDuplicatedEmail() throws Exception {
         configureLegitFormBean();
         Mockito.doThrow(new DuplicatedEmailException("User already exists")).
-            when(accountDao).insert((Account) Mockito.any(), Mockito.anyString(), Mockito.anyString());
+            when(accountDao).insert((Account) any(), anyString(), anyString());
 
         String ret = ctrl.create(request, formBean, "", result, status, UiModel);
 
@@ -196,7 +214,7 @@ public class NewAccountFormControllerTest {
     public void testCreateUserWithError() throws Exception {
         configureLegitFormBean();
         Mockito.doThrow(new DataServiceException("Something went wrong when dealing with LDAP")).
-            when(accountDao).insert((Account) Mockito.any(), Mockito.anyString(), Mockito.anyString());
+            when(accountDao).insert((Account) any(), anyString(), anyString());
 
         try {
             ctrl.create(request, formBean, "", result, status, UiModel);
@@ -214,7 +232,7 @@ public class NewAccountFormControllerTest {
     public void testCreateDuplicatedUid() throws Exception {
         configureLegitFormBean();
         Mockito.doThrow(new DuplicatedUidException("User ID already exists")).
-            when(accountDao).insert((Account) Mockito.any(), Mockito.anyString(), Mockito.anyString());
+            when(accountDao).insert((Account) any(), anyString(), anyString());
 
         String ret = ctrl.create(request, formBean, "", result, status, UiModel);
 
@@ -223,7 +241,7 @@ public class NewAccountFormControllerTest {
 
         // Same scenario, but unable to generate a new UID
         Mockito.doThrow(new DataServiceException("something has messed up")).
-            when(accountDao).generateUid(Mockito.anyString());
+            when(accountDao).generateUid(anyString());
         try {
             ctrl.create(request, formBean, "", result, status, UiModel);
         } catch (Throwable e) {
@@ -242,7 +260,7 @@ public class NewAccountFormControllerTest {
     @Test
     public void testSetupForm() throws IOException {
         configureLegitFormBean();
-        Model model = Mockito.mock(Model.class);
+        Model model = mock(Model.class);
 
         String ret = ctrl.setupForm(request, model);
 
@@ -349,6 +367,30 @@ public class NewAccountFormControllerTest {
         assertEquals("required", resultErrors.getFieldError("description").getDefaultMessage());
     }
 
+    @Test
+    public void orgValidators() throws Exception {
+        NewAccountFormController toTest = createToTest("firstName,surname,org,orgType, orgShortName, orgAddress");
+        AccountFormBean formBean = new AccountFormBean();
+        formBean.setCreateOrg(true);
+        formBean.setFirstName("Test");
+        formBean.setSurname("testmaster");
+        formBean.setEmail("test@localhost.com");
+        formBean.setUid("a123123-21465456-3434");
+        formBean.setConfirmPassword("testtest");
+        formBean.setPassword("testtest");
+        formBean.setRecaptcha_response_field("success");
+        mockRecaptchaSucess();
+        BindingResult resultErrors = new MapBindingResult(new HashMap<>(), "errors");
+
+        toTest.create(request, formBean, "", resultErrors, status, UiModel);
+
+        assertEquals("required", resultErrors.getFieldError("name").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("type").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("shortName").getDefaultMessage());
+        assertEquals("required", resultErrors.getFieldError("address").getDefaultMessage());
+        assertEquals(4, resultErrors.getFieldErrorCount());
+    }
+
     private NewAccountFormController createToTest(String requiredFields) {
         validation = new Validation(requiredFields);
         PasswordUtils passwordUtils = new PasswordUtils();
@@ -361,5 +403,16 @@ public class NewAccountFormControllerTest {
         toTest.setEmailFactory(efi);
         toTest.passwordUtils = passwordUtils;
         return toTest;
+    }
+
+    private void mockRecaptchaSucess() throws Exception {
+        HttpsURLConnection hucMock = mock(HttpsURLConnection.class);
+        BufferedInputStream successInputStream = new BufferedInputStream(new ReaderInputStream(new StringReader("{\"success\": true}")));
+        Mockito.when(hucMock.getInputStream()).thenReturn(successInputStream);
+        URL urlMock = PowerMockito.mock(URL.class);
+        PowerMockito.whenNew(URL.class).withAnyArguments().thenReturn(urlMock);
+        Mockito.when(urlMock.openConnection()).thenReturn(hucMock);
+        DataOutputStream dosMock = PowerMockito.mock(DataOutputStream.class);
+        PowerMockito.whenNew(DataOutputStream.class).withArguments(any(OutputStream.class)).thenReturn(dosMock);
     }
 }
