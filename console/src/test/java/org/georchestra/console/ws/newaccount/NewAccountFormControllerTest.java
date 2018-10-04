@@ -238,16 +238,6 @@ public class NewAccountFormControllerTest {
 
         // The user must be redirected to the Create Account form
         assertTrue(ret.equals("createAccountForm"));
-
-        // Same scenario, but unable to generate a new UID
-        Mockito.doThrow(new DataServiceException("something has messed up")).
-            when(accountDao).generateUid(anyString());
-        try {
-            ctrl.create(request, formBean, "", result, status, UiModel);
-        } catch (Throwable e) {
-            assertTrue (e instanceof IOException);
-        }
-
     }
 
     /**

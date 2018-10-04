@@ -289,18 +289,14 @@ public final class NewAccountFormController {
 
 		} catch (DuplicatedUidException e) {
 
-			try {
-				String proposedUid = accountDao.generateUid( formBean.getUid() );
+			String proposedUid = accountDao.generateUid( formBean.getUid() );
 
-				formBean.setUid(proposedUid);
+			formBean.setUid(proposedUid);
 
-				result.rejectValue("uid", "uid.error.exist", "the uid exist");
+			result.rejectValue("uid", "uid.error.exist", "the uid exist");
 
-				return "createAccountForm";
+			return "createAccountForm";
 
-			} catch (DataServiceException e1) {
-				throw new IOException(e);
-			}
 
 		} catch (DataServiceException|MessagingException e) {
 			throw new IOException(e);

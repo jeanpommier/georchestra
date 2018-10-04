@@ -163,9 +163,8 @@ public interface AccountDao {
 	 *  
 	 * @return a new uid
 	 * 
-	 * @throws DataServiceException
 	 */
-	String generateUid(String uid) throws DataServiceException;
+	String generateUid(String uid);
 
 	/**
 	 * users in LDAP directory with shadowExpire field filled

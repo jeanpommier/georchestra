@@ -376,7 +376,7 @@ public final class AccountDaoImpl implements AccountDao {
 
 
 
-    public boolean exist(final String uid) throws DataServiceException {
+    public boolean exist(final String uid) {
 
         try {
             LdapName dn = buildDn(uid.toLowerCase());
@@ -670,7 +670,7 @@ public final class AccountDaoImpl implements AccountDao {
      * @return the proposed uid
      */
     @Override
-    public String generateUid(String uid) throws DataServiceException {
+    public String generateUid(String uid) {
 
         String newUid = UidGenerator.next(uid);
 
