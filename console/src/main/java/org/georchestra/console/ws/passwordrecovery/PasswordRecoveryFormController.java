@@ -166,7 +166,7 @@ public class PasswordRecoveryFormController  {
 			String url = makeChangePasswordURL(this.georConfig.getProperty("publicUrl"), contextPath, token);
 
 			ServletContext servletContext = request.getSession().getServletContext();
-			this.emailFactory.sendChangePasswordEmail(servletContext, new String[]{account.getEmail()}, account.getCommonName(),  account.getUid(), url);
+			this.emailFactory.sendChangePasswordEmail(servletContext, account.getEmail(), account.getCommonName(),  account.getUid(), url);
 			sessionStatus.setComplete();
 
 			return "emailWasSent";

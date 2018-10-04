@@ -408,7 +408,7 @@ public class UsersController {
 
 		boolean uidChanged = ( ! modified.getUid().equals(account.getUid()));
 		if ((uidChanged) && (warnUserIfUidModified)) {
-			this.emailFactory.sendAccountUidRenamedEmail(request.getSession().getServletContext(), new String[]{modified.getEmail()},
+			this.emailFactory.sendAccountUidRenamedEmail(request.getSession().getServletContext(), modified.getEmail(),
 					modified.getCommonName(), modified.getUid());
 		}
 		return modified;

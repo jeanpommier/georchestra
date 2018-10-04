@@ -268,14 +268,14 @@ public final class NewAccountFormController {
 
 			// Select email template based on moderation configuration for admin and user and send emails
 			if(moderator.moderatedSignup()){
-				emailFactory.sendNewAccountRequiresModerationEmail(servletContext, recipients.toArray(new String[recipients.size()]),
+				emailFactory.sendNewAccountRequiresModerationEmail(servletContext, recipients,
 						account.getCommonName(), account.getUid(), account.getEmail());
-				emailFactory.sendAccountCreationInProcessEmail(servletContext, new String[]{account.getEmail()},
+				emailFactory.sendAccountCreationInProcessEmail(servletContext, account.getEmail(),
 						account.getCommonName(), account.getUid());
 			} else {
-				emailFactory.sendNewAccountNotificationEmail(servletContext,recipients.toArray(new String[recipients.size()]),
+				emailFactory.sendNewAccountNotificationEmail(servletContext, recipients,
 						account.getCommonName(), account.getUid(), account.getEmail());
-				emailFactory.sendAccountWasCreatedEmail(servletContext, new String[]{account.getEmail()},
+				emailFactory.sendAccountWasCreatedEmail(servletContext, account.getEmail(),
 						account.getCommonName(), account.getUid());
 			}
 			sessionStatus.setComplete();
@@ -289,16 +289,12 @@ public final class NewAccountFormController {
 
 		} catch (DuplicatedUidException e) {
 
-			String proposedUid = accountDao.generateUid( formBean.getUid() );
-
-			formBean.setUid(proposedUid);
-
+			formBean.setUid(accountDao.generateUid(formBean.getUid()));
 			result.rejectValue("uid", "uid.error.exist", "the uid exist");
-
 			return "createAccountForm";
 
-
 		} catch (DataServiceException|MessagingException e) {
+
 			throw new IOException(e);
 		}
 	}
