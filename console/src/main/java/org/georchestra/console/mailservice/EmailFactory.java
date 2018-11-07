@@ -26,7 +26,6 @@ import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.ServletContext;
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.singletonList;

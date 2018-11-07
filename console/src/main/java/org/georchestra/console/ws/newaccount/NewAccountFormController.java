@@ -315,10 +315,8 @@ public final class NewAccountFormController {
 		validation.validateUserFieldWithSpecificMsg("surname", formBean.getSurname(), result);
 
 		// email validation
-		if (validation.validateUserFieldWithSpecificMsg("email", formBean.getEmail(), result)) {
-			if (!EmailValidator.getInstance().isValid(formBean.getEmail())) {
-				result.rejectValue("email", "email.error.invalidFormat", "Invalid Format");
-			}
+		if (validation.validateUserFieldWithSpecificMsg("email", formBean.getEmail(), result) && !EmailValidator.getInstance().isValid(formBean.getEmail())) {
+			result.rejectValue("email", "email.error.invalidFormat", "Invalid Format");
 		}
 
 		// password validation

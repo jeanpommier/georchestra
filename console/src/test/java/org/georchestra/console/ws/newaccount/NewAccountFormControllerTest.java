@@ -71,12 +71,9 @@ public class NewAccountFormControllerTest {
     private ReCaptchaParameters rep = new ReCaptchaParameters();
     private MockHttpServletRequest request = new MockHttpServletRequest();
     private Model UiModel = mock(Model.class);
-    private Account adminAccount;
-    private Validation validation;
-
-    AccountFormBean formBean = mock(AccountFormBean.class);
-    BindingResult result = mock(BindingResult.class);
-    SessionStatus status = mock(SessionStatus.class);
+    private AccountFormBean formBean = mock(AccountFormBean.class);
+    private BindingResult result = mock(BindingResult.class);
+    private SessionStatus status = mock(SessionStatus.class);
 
     private void configureLegitFormBean() {
         Mockito.when(formBean.getUid()).thenReturn("1");
@@ -106,7 +103,7 @@ public class NewAccountFormControllerTest {
         DistinguishedName dn = new DistinguishedName();
         dn.add(new LdapRdn("ou=users"));
         dn.add("uid", "testadmin");
-        adminAccount =  AccountFactory.createBrief("testadmin", "monkey123", "Test", "ADmin",
+        Account adminAccount =  AccountFactory.createBrief("testadmin", "monkey123", "Test", "ADmin",
                 "postmastrer@localhost", "+33123456789", "admin", "");
         request.addHeader("sec-username", "testadmin"); // Set user connected through http header
         try {
@@ -382,7 +379,7 @@ public class NewAccountFormControllerTest {
     }
 
     private NewAccountFormController createToTest(String requiredFields) {
-        validation = new Validation(requiredFields);
+        Validation validation = new Validation(requiredFields);
         PasswordUtils passwordUtils = new PasswordUtils();
         passwordUtils.setValidation(validation);
 
