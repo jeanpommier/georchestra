@@ -282,11 +282,7 @@ public final class AccountDaoImpl implements AccountDao {
     @Override
     public List<Account> findAll() throws DataServiceException {
         EqualsFilter filter = new EqualsFilter("objectClass", "person");
-
-        SearchControls sc = new SearchControls();
-        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        return ldapTemplate.search(userSearchBaseDN, filter.encode(), sc, attributMapper);
+        return getAccounts(filter);
     }
     
     @Override
@@ -295,10 +291,7 @@ public final class AccountDaoImpl implements AccountDao {
         and.and( new EqualsFilter("objectClass", "person"));
         and.and(f);
 
-        SearchControls sc = new SearchControls();
-        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        List<Account> l = ldapTemplate.search(userSearchBaseDN, and.encode(), sc, attributMapper);
+        List<Account> l = getAccounts(and);
         return filterProtected.filterUsersList(l);
     }
 
@@ -342,10 +335,7 @@ public final class AccountDaoImpl implements AccountDao {
         filter.and(new EqualsFilter("objectClass", "person"));
         filter.and(new EqualsFilter("mail", email));
 
-        SearchControls sc = new SearchControls();
-        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        List<Account> accountList = ldapTemplate.search(userSearchBaseDN, filter.encode(),sc, attributMapper);
+        List<Account> accountList = getAccounts(filter);
         if (accountList.isEmpty()) {
             throw new NameNotFoundException("There is no user with this email: " + email);
         }
@@ -367,10 +357,7 @@ public final class AccountDaoImpl implements AccountDao {
         Name memberOfValue = LdapNameBuilder.newInstance(basePath).add(this.roleSearchBaseDN).add("cn", role).build();
         filter.and(new EqualsFilter("memberOf", memberOfValue.toString()));
 
-        SearchControls sc = new SearchControls();
-        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        return ldapTemplate.search(userSearchBaseDN, filter.encode(),sc, attributMapper);
+        return getAccounts(filter);
     }
 
 
@@ -690,10 +677,14 @@ public final class AccountDaoImpl implements AccountDao {
         filter.and(new EqualsFilter("objectClass", "person"));
         filter.and(new PresentFilter("shadowExpire"));
 
+        return getAccounts(filter);
+
+    }
+
+    private List<Account> getAccounts(Filter filter) {
         SearchControls sc = new SearchControls();
         sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
         return ldapTemplate.search(userSearchBaseDN, filter.encode(),sc, attributMapper);
-
     }
 }
