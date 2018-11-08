@@ -81,14 +81,6 @@ public interface AccountDao {
 	List<Account> findByRole(final String role) throws DataServiceException, NameNotFoundException;
 
 	/**
-	 * Finds all accounts given a list of blacklisted users and a LDAP filter
-	 *
-	 * @return List of Account that are not in the ProtectedUserFilter, and which
-	 * complies with the provided LDAP filter.
-	 */
-	List<Account> find(final ProtectedUserFilter uidFilter, Filter f);
-	
-	/**
 	 * Returns all accounts that accomplish the provided filter.
 	 * 
 	 * @param uidFilter

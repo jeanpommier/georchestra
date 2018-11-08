@@ -360,16 +360,6 @@ public final class AccountDaoImpl implements AccountDao {
     }
 
     @Override
-    public List<Account> find(final ProtectedUserFilter filterProtected, Filter f) {
-        AndFilter and = new AndFilter();
-        and.and( new EqualsFilter("objectClass", "person"));
-        and.and(f);
-
-        List<Account> l = getAccounts(and);
-        return filterProtected.filterUsersList(l);
-    }
-
-    @Override
     public List<Account> findFilterBy(final ProtectedUserFilter filterProtected) throws DataServiceException {
 
         List<Account> allUsers = findAll();
