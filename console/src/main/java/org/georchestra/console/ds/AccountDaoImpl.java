@@ -304,18 +304,21 @@ public final class AccountDaoImpl implements AccountDao {
      */
     @Override
     public List<Account> findAll() throws DataServiceException {
-        EqualsFilter filter = new EqualsFilter("objectClass", "person");
+        AndFilter filter = new AndFilter();
+        filter.and(new EqualsFilter("objectClass", "inetOrgPerson"));
+        filter.and(new EqualsFilter("objectClass", "organizationalPerson"));
+        filter.and(new EqualsFilter("objectClass", "person"));
         return getAccounts(filter);
     }
 
     @Override
     public List<Account> findByShadowExpire() {
         AndFilter filter = new AndFilter();
-        filter.and(new EqualsFilter("objectClass", "shadowAccount"));
         filter.and(new EqualsFilter("objectClass", "inetOrgPerson"));
         filter.and(new EqualsFilter("objectClass", "organizationalPerson"));
         filter.and(new EqualsFilter("objectClass", "person"));
         filter.and(new PresentFilter("shadowExpire"));
+        filter.and(new EqualsFilter("objectClass", "shadowAccount"));
 
         return getAccounts(filter);
 
@@ -326,15 +329,15 @@ public final class AccountDaoImpl implements AccountDao {
      */
     @Override
     public Account findByEmail(final String email) throws DataServiceException, NameNotFoundException {
-
-
         AndFilter filter = new AndFilter();
         filter.and(new EqualsFilter("objectClass", "inetOrgPerson"));
         filter.and(new EqualsFilter("objectClass", "organizationalPerson"));
         filter.and(new EqualsFilter("objectClass", "person"));
+
         filter.and(new EqualsFilter("mail", email));
 
         List<Account> accountList = getAccounts(filter);
+
         if (accountList.isEmpty()) {
             throw new NameNotFoundException("There is no user with this email: " + email);
         }
