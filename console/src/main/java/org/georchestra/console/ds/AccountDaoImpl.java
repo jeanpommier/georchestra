@@ -281,21 +281,23 @@ public final class AccountDaoImpl implements AccountDao {
      */
     @Override
     public List<Account> findAll() throws DataServiceException {
+        EqualsFilter filter = new EqualsFilter("objectClass", "person");
+
         SearchControls sc = new SearchControls();
         sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        EqualsFilter filter = new EqualsFilter("objectClass", "person");
         return ldapTemplate.search(userSearchBaseDN, filter.encode(), sc, attributMapper);
     }
     
     @Override
     public List<Account> find(final ProtectedUserFilter filterProtected, Filter f) {
-        SearchControls sc = new SearchControls();
-        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
         AndFilter and = new AndFilter();
         and.and( new EqualsFilter("objectClass", "person"));
         and.and(f);
+
+        SearchControls sc = new SearchControls();
+        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
+        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
         List<Account> l = ldapTemplate.search(userSearchBaseDN, and.encode(), sc, attributMapper);
         return filterProtected.filterUsersList(l);
     }
@@ -333,9 +335,6 @@ public final class AccountDaoImpl implements AccountDao {
     @Override
     public Account findByEmail(final String email) throws DataServiceException, NameNotFoundException {
 
-        SearchControls sc = new SearchControls();
-        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
         AndFilter filter = new AndFilter();
         filter.and(new EqualsFilter("objectClass", "inetOrgPerson"));
@@ -343,8 +342,10 @@ public final class AccountDaoImpl implements AccountDao {
         filter.and(new EqualsFilter("objectClass", "person"));
         filter.and(new EqualsFilter("mail", email));
 
-        List<Account> accountList = ldapTemplate.search(userSearchBaseDN, filter.encode(),sc,
-                attributMapper);
+        SearchControls sc = new SearchControls();
+        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
+        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        List<Account> accountList = ldapTemplate.search(userSearchBaseDN, filter.encode(),sc, attributMapper);
         if (accountList.isEmpty()) {
             throw new NameNotFoundException("There is no user with this email: " + email);
         }
@@ -358,11 +359,6 @@ public final class AccountDaoImpl implements AccountDao {
      */
     @Override
     public List<Account> findByRole(final String role) throws DataServiceException, NameNotFoundException {
-
-        SearchControls sc = new SearchControls();
-        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-
         AndFilter filter = new AndFilter();
         filter.and(new EqualsFilter("objectClass", "inetOrgPerson"));
         filter.and(new EqualsFilter("objectClass", "organizationalPerson"));
@@ -371,6 +367,9 @@ public final class AccountDaoImpl implements AccountDao {
         Name memberOfValue = LdapNameBuilder.newInstance(basePath).add(this.roleSearchBaseDN).add("cn", role).build();
         filter.and(new EqualsFilter("memberOf", memberOfValue.toString()));
 
+        SearchControls sc = new SearchControls();
+        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
+        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
         return ldapTemplate.search(userSearchBaseDN, filter.encode(),sc, attributMapper);
     }
 
@@ -682,14 +681,8 @@ public final class AccountDaoImpl implements AccountDao {
         return newUid;
     }
 
-
     @Override
     public List<Account> findByShadowExpire() {
-
-        SearchControls sc = new SearchControls();
-        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-
         AndFilter filter = new AndFilter();
         filter.and(new EqualsFilter("objectClass", "shadowAccount"));
         filter.and(new EqualsFilter("objectClass", "inetOrgPerson"));
@@ -697,6 +690,9 @@ public final class AccountDaoImpl implements AccountDao {
         filter.and(new EqualsFilter("objectClass", "person"));
         filter.and(new PresentFilter("shadowExpire"));
 
+        SearchControls sc = new SearchControls();
+        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
+        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
         return ldapTemplate.search(userSearchBaseDN, filter.encode(),sc, attributMapper);
 
     }
