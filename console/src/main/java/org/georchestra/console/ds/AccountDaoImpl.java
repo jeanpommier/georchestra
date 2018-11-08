@@ -277,35 +277,6 @@ public final class AccountDaoImpl implements AccountDao {
     }
 
     /**
-     * @see {@link AccountDao#findAll()}
-     */
-    @Override
-    public List<Account> findAll() throws DataServiceException {
-        EqualsFilter filter = new EqualsFilter("objectClass", "person");
-        return getAccounts(filter);
-    }
-    
-    @Override
-    public List<Account> find(final ProtectedUserFilter filterProtected, Filter f) {
-        AndFilter and = new AndFilter();
-        and.and( new EqualsFilter("objectClass", "person"));
-        and.and(f);
-
-        List<Account> l = getAccounts(and);
-        return filterProtected.filterUsersList(l);
-    }
-
-    @Override
-    public List<Account> findFilterBy(final ProtectedUserFilter filterProtected) throws DataServiceException {
-
-        List<Account> allUsers = findAll();
-
-        List<Account> list = filterProtected.filterUsersList(allUsers);
-
-        return list;
-    }
-
-    /**
      * @see {@link AccountDao#findByUID(String)}
      */
     @Override
@@ -319,6 +290,34 @@ public final class AccountDaoImpl implements AccountDao {
             throw new NameNotFoundException("Cannot find user with uid : " + uid + " in LDAP server");
         else
             return a;
+    }
+
+    private List<Account> getAccounts(Filter filter) {
+        SearchControls sc = new SearchControls();
+        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
+        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        return ldapTemplate.search(userSearchBaseDN, filter.encode(),sc, attributMapper);
+    }
+
+    /**
+     * @see {@link AccountDao#findAll()}
+     */
+    @Override
+    public List<Account> findAll() throws DataServiceException {
+        EqualsFilter filter = new EqualsFilter("objectClass", "person");
+        return getAccounts(filter);
+    }
+
+    @Override
+    public List<Account> findByShadowExpire() {
+        AndFilter filter = new AndFilter();
+        filter.and(new EqualsFilter("objectClass", "shadowAccount"));
+        filter.and(new EqualsFilter("objectClass", "inetOrgPerson"));
+        filter.and(new EqualsFilter("objectClass", "organizationalPerson"));
+        filter.and(new EqualsFilter("objectClass", "person"));
+        filter.and(new PresentFilter("shadowExpire"));
+
+        return getAccounts(filter);
 
     }
 
@@ -360,7 +359,25 @@ public final class AccountDaoImpl implements AccountDao {
         return getAccounts(filter);
     }
 
+    @Override
+    public List<Account> find(final ProtectedUserFilter filterProtected, Filter f) {
+        AndFilter and = new AndFilter();
+        and.and( new EqualsFilter("objectClass", "person"));
+        and.and(f);
 
+        List<Account> l = getAccounts(and);
+        return filterProtected.filterUsersList(l);
+    }
+
+    @Override
+    public List<Account> findFilterBy(final ProtectedUserFilter filterProtected) throws DataServiceException {
+
+        List<Account> allUsers = findAll();
+
+        List<Account> list = filterProtected.filterUsersList(allUsers);
+
+        return list;
+    }
 
     public boolean exist(final String uid) {
 
@@ -668,23 +685,4 @@ public final class AccountDaoImpl implements AccountDao {
         return newUid;
     }
 
-    @Override
-    public List<Account> findByShadowExpire() {
-        AndFilter filter = new AndFilter();
-        filter.and(new EqualsFilter("objectClass", "shadowAccount"));
-        filter.and(new EqualsFilter("objectClass", "inetOrgPerson"));
-        filter.and(new EqualsFilter("objectClass", "organizationalPerson"));
-        filter.and(new EqualsFilter("objectClass", "person"));
-        filter.and(new PresentFilter("shadowExpire"));
-
-        return getAccounts(filter);
-
-    }
-
-    private List<Account> getAccounts(Filter filter) {
-        SearchControls sc = new SearchControls();
-        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        return ldapTemplate.search(userSearchBaseDN, filter.encode(),sc, attributMapper);
-    }
 }

@@ -49,6 +49,44 @@ public interface AccountDao {
 	 * @throws DataServiceException
 	 */
 	List<Account> findAll() throws DataServiceException;
+
+	/**
+	 * users in LDAP directory with shadowExpire field filled
+	 *
+	 * @return List of Account that have a shadowExpire attribute
+	 */
+
+	List<Account> findByShadowExpire();
+
+	/**
+	 * Returns the account that contains the email provided as parameter.
+	 *
+	 * @param email
+	 * @return {@link Account}
+	 *
+	 * @throws DataServiceException
+	 * @throws NameNotFoundException
+	 */
+	Account findByEmail(final String email) throws DataServiceException, NameNotFoundException;
+
+	/**
+	 * Returns a list of account that have specified role.
+	 *
+	 * @param role
+	 * @return List of {@link Account}
+	 *
+	 * @throws DataServiceException
+	 * @throws NameNotFoundException
+	 */
+	List<Account> findByRole(final String role) throws DataServiceException, NameNotFoundException;
+
+	/**
+	 * Finds all accounts given a list of blacklisted users and a LDAP filter
+	 *
+	 * @return List of Account that are not in the ProtectedUserFilter, and which
+	 * complies with the provided LDAP filter.
+	 */
+	List<Account> find(final ProtectedUserFilter uidFilter, Filter f);
 	
 	/**
 	 * Returns all accounts that accomplish the provided filter.
@@ -126,28 +164,6 @@ public interface AccountDao {
 	Account findByUID(final String uid)throws DataServiceException, NameNotFoundException;
 
 	/**
-	 * Returns the account that contains the email provided as parameter.
-	 * 
-	 * @param email
-	 * @return {@link Account}
-	 * 
-	 * @throws DataServiceException
-	 * @throws NameNotFoundException
-	 */
-	Account findByEmail(final String email) throws DataServiceException, NameNotFoundException;
-
-	/**
-	 * Returns a list of account that have specified role.
-	 *
-	 * @param role
-	 * @return List of {@link Account}
-	 *
-	 * @throws DataServiceException
-	 * @throws NameNotFoundException
-	 */
-	List<Account> findByRole(final String role) throws DataServiceException, NameNotFoundException;
-
-	/**
 	 * Add the new password. This method is part of the "lost password" workflow to maintan the old password and the new password until the
 	 * user can confirm that he had asked for a new password.   
 	 * 
@@ -166,20 +182,5 @@ public interface AccountDao {
 	 */
 	String generateUid(String uid);
 
-	/**
-	 * users in LDAP directory with shadowExpire field filled
-	 *
-	 * @return List of Account that have a shadowExpire attribute
-	 */
-
-	List<Account> findByShadowExpire();
-
-	/**
-	 * Finds all accounts given a list of blacklisted users and a LDAP filter
-	 *
-	 * @return List of Account that are not in the ProtectedUserFilter, and which
-	 * complies with the provided LDAP filter.
-	 */
-	List<Account> find(final ProtectedUserFilter uidFilter, Filter f);
 
 }
