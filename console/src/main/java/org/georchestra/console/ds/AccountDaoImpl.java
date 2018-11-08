@@ -35,8 +35,6 @@ import org.springframework.ldap.NameNotFoundException;
 import org.springframework.ldap.core.ContextMapper;
 import org.springframework.ldap.core.DirContextAdapter;
 import org.springframework.ldap.core.DirContextOperations;
-import org.springframework.ldap.core.DistinguishedName;
-import org.springframework.ldap.core.LdapRdn;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
@@ -168,10 +166,6 @@ public final class AccountDaoImpl implements AccountDao {
         // inserts the new user account
         try {
             Name dn = buildDn(uid);
-            AndFilter filter = new AndFilter();
-            filter.and(new EqualsFilter("objectClass", "inetOrgPerson"));
-            filter.and(new EqualsFilter("objectClass", "organizationalPerson"));
-            filter.and(new EqualsFilter("objectClass", "person"));
 
             DirContextAdapter context = new DirContextAdapter(dn);
             mapToContext(account, context);
@@ -292,84 +286,44 @@ public final class AccountDaoImpl implements AccountDao {
             return a;
     }
 
-    private List<Account> getAccounts(Filter filter) {
-        SearchControls sc = new SearchControls();
-        sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        return ldapTemplate.search(userSearchBaseDN, filter.encode(),sc, attributMapper);
-    }
-
-    /**
-     * @see {@link AccountDao#findAll()}
-     */
     @Override
     public List<Account> findAll() throws DataServiceException {
-        AndFilter filter = new AndFilter();
-        filter.and(new EqualsFilter("objectClass", "inetOrgPerson"));
-        filter.and(new EqualsFilter("objectClass", "organizationalPerson"));
-        filter.and(new EqualsFilter("objectClass", "person"));
-        return getAccounts(filter);
+        return new AccountSearcher()
+                .getAccounts();
     }
 
     @Override
     public List<Account> findByShadowExpire() {
-        AndFilter filter = new AndFilter();
-        filter.and(new EqualsFilter("objectClass", "inetOrgPerson"));
-        filter.and(new EqualsFilter("objectClass", "organizationalPerson"));
-        filter.and(new EqualsFilter("objectClass", "person"));
-        filter.and(new PresentFilter("shadowExpire"));
-        filter.and(new EqualsFilter("objectClass", "shadowAccount"));
-
-        return getAccounts(filter);
-
+        return new AccountSearcher()
+                .and(new PresentFilter("shadowExpire"))
+                .and(new EqualsFilter("objectClass", "shadowAccount"))
+                .getAccounts();
     }
 
-    /**
-     * @see {@link AccountDao#findByEmail(String)}
-     */
     @Override
     public Account findByEmail(final String email) throws DataServiceException, NameNotFoundException {
-        AndFilter filter = new AndFilter();
-        filter.and(new EqualsFilter("objectClass", "inetOrgPerson"));
-        filter.and(new EqualsFilter("objectClass", "organizationalPerson"));
-        filter.and(new EqualsFilter("objectClass", "person"));
-
-        filter.and(new EqualsFilter("mail", email));
-
-        List<Account> accountList = getAccounts(filter);
-
+        List<Account> accountList = new AccountSearcher()
+                .and(new EqualsFilter("mail", email))
+                .getAccounts();
         if (accountList.isEmpty()) {
             throw new NameNotFoundException("There is no user with this email: " + email);
         }
-        Account account = accountList.get(0);
-
-        return account;
+        return accountList.get(0);
     }
 
-    /**
-     * @see {@link AccountDao#findByRole(String)}
-     */
     @Override
     public List<Account> findByRole(final String role) throws DataServiceException, NameNotFoundException {
-        AndFilter filter = new AndFilter();
-        filter.and(new EqualsFilter("objectClass", "inetOrgPerson"));
-        filter.and(new EqualsFilter("objectClass", "organizationalPerson"));
-        filter.and(new EqualsFilter("objectClass", "person"));
-
         Name memberOfValue = LdapNameBuilder.newInstance(basePath).add(this.roleSearchBaseDN).add("cn", role).build();
-        filter.and(new EqualsFilter("memberOf", memberOfValue.toString()));
-
-        return getAccounts(filter);
+        return new AccountSearcher()
+                .and(new EqualsFilter("memberOf", memberOfValue.toString()))
+                .getAccounts();
     }
 
     @Override
     public List<Account> findFilterBy(final ProtectedUserFilter filterProtected) throws DataServiceException {
-
-        List<Account> allUsers = findAll();
-
-        List<Account> list = filterProtected.filterUsersList(allUsers);
-
-        return list;
+        List<Account> allUsers = new AccountSearcher()
+                .getAccounts();
+        return filterProtected.filterUsersList(allUsers);
     }
 
     public boolean exist(final String uid) {
@@ -678,4 +632,26 @@ public final class AccountDaoImpl implements AccountDao {
         return newUid;
     }
 
+    private class AccountSearcher {
+
+        private AndFilter filter;
+
+        public List<Account> getAccounts() {
+            SearchControls sc = new SearchControls();
+            sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            return ldapTemplate.search(userSearchBaseDN, filter.encode(), sc, attributMapper);
+        }
+
+        public AccountSearcher() {
+            filter =  new AndFilter()
+                    .and(new EqualsFilter("objectClass", "inetOrgPerson"))
+                    .and(new EqualsFilter("objectClass", "organizationalPerson"))
+                    .and(new EqualsFilter("objectClass", "person"));
+        }
+
+        public AccountSearcher and(Filter filter) {
+            return this;
+        }
+    }
 }
