@@ -586,17 +586,18 @@ public final class AccountDaoImpl implements AccountDao {
      */
     @Override
     public void addNewPassword(String uid, String newPassword) {
-        if (uid.length() == 0) {
+        if (StringUtils.isEmpty(uid)) {
             throw new IllegalArgumentException("uid is required");
         }
-        if (newPassword.length() == 0) {
-            throw new IllegalArgumentException("new password is required");
+        if (StringUtils.isEmpty(newPassword)) {
+            throw new IllegalArgumentException("password is required");
         }
-        LdapShaPasswordEncoder lspe = new LdapShaPasswordEncoder();
-        String encrypted = lspe.encodePassword(newPassword, String.valueOf(System.currentTimeMillis()).getBytes());
         // update the entry in the LDAP tree
         Name dn = buildDn(uid);
         DirContextOperations context = ldapTemplate.lookupContext(dn);
+
+        LdapShaPasswordEncoder lspe = new LdapShaPasswordEncoder();
+        String encrypted = lspe.encodePassword(newPassword, String.valueOf(System.currentTimeMillis()).getBytes());
 
         final String pwd = "userPassword";
         Object[] pwdValues = context.getObjectAttributes(pwd);
