@@ -41,14 +41,6 @@ public interface AccountDao {
 	 * @throws DataServiceException
 	 */
 	boolean exist(final String uid) throws DataServiceException;
-	
-	/**
-	 * Returns all accounts
-	 * 
-	 * @return List of {@link Account}
-	 * @throws DataServiceException
-	 */
-	List<Account> findAll() throws DataServiceException;
 
 	/**
 	 * users in LDAP directory with shadowExpire field filled
@@ -98,7 +90,7 @@ public interface AccountDao {
 	 * @throws DataServiceException
 	 * @throws DuplicatedEmailException
 	 */
-	void insert(final Account account, final String roleID, final String originLogin) throws DataServiceException, DuplicatedUidException, DuplicatedEmailException;
+	void insert(final Account account, final String roleID, final String originLogin, boolean pending) throws DataServiceException, DuplicatedUidException, DuplicatedEmailException;
 
 	/**
 	 * Updates the user account

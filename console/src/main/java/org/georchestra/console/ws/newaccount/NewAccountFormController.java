@@ -244,9 +244,7 @@ public final class NewAccountFormController {
 			if(!formBean.getOrg().equals("-"))
 				account.setOrg(formBean.getOrg());
 
-			String roleID = moderator.moderatedSignup() ? Role.PENDING : Role.USER;
-
-			accountDao.insert(account, roleID, request.getHeader("sec-username"));
+			accountDao.insert(account,  Role.USER, request.getHeader("sec-username"), moderator.moderatedSignup());
 
 			final ServletContext servletContext = request.getSession().getServletContext();
 

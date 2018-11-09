@@ -4,6 +4,12 @@ objectClass: organizationalUnit
 objectClass: top
 ou: users
 
+# pendingusers, georchestra.org
+dn: ou=pendingusers,dc=georchestra,dc=org
+objectClass: organizationalUnit
+objectClass: top
+ou: pendingusers
+
 # testuser, users, georchestra.org
 dn: uid=testuser,ou=users,dc=georchestra,dc=org
 objectClass: organizationalPerson
@@ -85,7 +91,7 @@ description: Do not modify.  This is a required user for extractorapp, geofence,
 userPassword:: e1NIQX1XMlY4d2UrOFdNanpma28rMUtZVDFZcWZFVDQ9
 
 # testpendinguser, users, georchestra.org
-dn: uid=testpendinguser,ou=users,dc=georchestra,dc=org
+dn: uid=testpendinguser,ou=pendingusers,dc=georchestra,dc=org
 objectClass: inetOrgPerson
 objectClass: organizationalPerson
 objectClass: person
@@ -216,6 +222,13 @@ objectClass: organizationalUnit
 objectClass: top
 ou: orgs
 
+# orgs, georchestra.org
+dn: ou=pendingorgs,dc=georchestra,dc=org
+objectClass: organizationalUnit
+objectClass: top
+ou: pendingorgs
+
+
 dn: o=psc,ou=orgs,dc=georchestra,dc=org
 objectClass: organization
 objectClass: top
@@ -272,14 +285,14 @@ o: Conseil régional d'Alsace
 ou: CRA
 seeAlso: o=cra,ou=orgs,dc=georchestra,dc=org
 
-dn: o=pendingorg,ou=orgs,dc=georchestra,dc=org
+dn: o=pendingorg,ou=pendingorgs,dc=georchestra,dc=org
 objectClass: organization
 objectClass: top
 o: pendingorg
 businessCategory: COMPANY
 postalAddress: Null island
 
-dn: cn=pendingorg,ou=orgs,dc=georchestra,dc=org
+dn: cn=pendingorg,ou=pendingorgs,dc=georchestra,dc=org
 objectClass: groupOfMembers
 objectClass: top
 cn: pendingorg

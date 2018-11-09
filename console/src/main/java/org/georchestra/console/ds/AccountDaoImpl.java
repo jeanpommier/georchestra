@@ -52,6 +52,8 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class is responsible of maintaining the user accounts (CRUD operations).
@@ -61,6 +63,7 @@ import java.util.regex.Pattern;
 public final class AccountDaoImpl implements AccountDao {
 
     private LdapName userSearchBaseDN;
+    private LdapName pendingUserSearchBaseDN;
     private AccountContextMapper attributMapper;
     private LdapTemplate ldapTemplate;
     private RoleDao roleDao;
@@ -110,6 +113,10 @@ public final class AccountDaoImpl implements AccountDao {
         this.userSearchBaseDN = LdapNameBuilder.newInstance(userSearchBaseDN).build();
     }
 
+    public void setPendingUserSearchBaseDN(String pendingUserSearchBaseDN) {
+        this.pendingUserSearchBaseDN = LdapNameBuilder.newInstance(pendingUserSearchBaseDN).build();
+    }
+
     public void setLogDao(AdminLogDao logDao) {
         this.logDao = logDao;
     }
@@ -126,12 +133,9 @@ public final class AccountDaoImpl implements AccountDao {
         this.roleSearchBaseDN = roleSearchBaseDN;
     }
 
-    /**
-     * @see {@link AccountDao#insert(Account, String, String)}
-     */
     @Override
-    public synchronized void insert(final Account account, final String roleID, final String originLogin) throws DataServiceException,
-            DuplicatedUidException, DuplicatedEmailException {
+    public synchronized void insert(final Account account, final String roleID, final String originLogin, boolean pending)
+            throws DataServiceException, DuplicatedUidException, DuplicatedEmailException {
 
         assert account != null;
 
@@ -165,7 +169,7 @@ public final class AccountDaoImpl implements AccountDao {
 
         // inserts the new user account
         try {
-            Name dn = buildDn(uid);
+            Name dn = buildDn(uid, pending);
 
             DirContextAdapter context = new DirContextAdapter(dn);
             mapToContext(account, context);
@@ -226,7 +230,7 @@ public final class AccountDaoImpl implements AccountDao {
         }
 
         // update the entry in the ldap tree
-        Name dn = buildDn(account.getUid());
+        Name dn = buildDn(account);
         DirContextOperations context = ldapTemplate.lookupContext(dn);
 
         mapToContext(account, context);
@@ -245,8 +249,8 @@ public final class AccountDaoImpl implements AccountDao {
      */
     @Override
     public synchronized void update(Account account, Account modified, String originLogin) throws DataServiceException, DuplicatedEmailException, NameNotFoundException {
-       if (! account.getUid().equals(modified.getUid())) {
-           ldapTemplate.rename(buildDn(account.getUid()), buildDn(modified.getUid()));
+       if (! buildDn(account).equals(buildDn(modified))) {
+           ldapTemplate.rename(buildDn(account), buildDn(modified));
            for (Role g : roleDao.findAllForUser(account.getUid())) {
                roleDao.modifyUser(g.getName(), account.getUid(), modified.getUid());
            }
@@ -266,7 +270,7 @@ public final class AccountDaoImpl implements AccountDao {
     public synchronized void delete(final String uid, final String originLogin) throws DataServiceException, NameNotFoundException {
 
         this.roleDao.deleteUser(uid, originLogin);
-        this.ldapTemplate.unbind(buildDn(uid), true);
+        this.ldapTemplate.unbind(buildDn(findByUID(uid)), true);
 
     }
 
@@ -275,21 +279,14 @@ public final class AccountDaoImpl implements AccountDao {
      */
     @Override
     public Account findByUID(final String uid) throws NameNotFoundException{
-
-        if(uid == null)
+        if(uid == null) {
             throw new NameNotFoundException("Cannot find user with uid : " + uid + " in LDAP server");
-
+        }
         Account a = (Account) ldapTemplate.lookup(buildDn(uid.toLowerCase()), UserSchema.ATTR_TO_RETRIEVE, attributMapper);
-        if(a == null)
-            throw new NameNotFoundException("Cannot find user with uid : " + uid + " in LDAP server");
-        else
-            return a;
-    }
-
-    @Override
-    public List<Account> findAll() throws DataServiceException {
-        return new AccountSearcher()
-                .getAccounts();
+        if(a != null) {return a;}
+        a = (Account) ldapTemplate.lookup(buildDn(uid.toLowerCase(), true), UserSchema.ATTR_TO_RETRIEVE, attributMapper);
+        if(a != null) {return a;}
+        throw new NameNotFoundException("Cannot find user with uid : " + uid + " in LDAP server");
     }
 
     @Override
@@ -297,14 +294,14 @@ public final class AccountDaoImpl implements AccountDao {
         return new AccountSearcher()
                 .and(new PresentFilter("shadowExpire"))
                 .and(new EqualsFilter("objectClass", "shadowAccount"))
-                .getAccounts();
+                .getActiveOrPendingAccounts();
     }
 
     @Override
     public Account findByEmail(final String email) throws DataServiceException, NameNotFoundException {
         List<Account> accountList = new AccountSearcher()
                 .and(new EqualsFilter("mail", email))
-                .getAccounts();
+                .getActiveOrPendingAccounts();
         if (accountList.isEmpty()) {
             throw new NameNotFoundException("There is no user with this email: " + email);
         }
@@ -316,13 +313,13 @@ public final class AccountDaoImpl implements AccountDao {
         Name memberOfValue = LdapNameBuilder.newInstance(basePath).add(this.roleSearchBaseDN).add("cn", role).build();
         return new AccountSearcher()
                 .and(new EqualsFilter("memberOf", memberOfValue.toString()))
-                .getAccounts();
+                .getActiveOrPendingAccounts();
     }
 
     @Override
     public List<Account> findFilterBy(final ProtectedUserFilter filterProtected) throws DataServiceException {
         List<Account> allUsers = new AccountSearcher()
-                .getAccounts();
+                .getActiveOrPendingAccounts();
         return filterProtected.filterUsersList(allUsers);
     }
 
@@ -337,18 +334,19 @@ public final class AccountDaoImpl implements AccountDao {
         }
     }
 
-    /**
-     * Create an ldap entry for the user
-     *
-     * @param uid
-     *            user id
-     * @return
-     */
     private LdapName buildDn(String uid) {
+        return buildDn(uid, false);
+    }
+
+    private LdapName buildDn(String uid, boolean pending) {
         LdapNameBuilder builder = LdapNameBuilder.newInstance();
-        builder.add(userSearchBaseDN);
+        builder.add(pending?pendingUserSearchBaseDN:userSearchBaseDN);
         builder.add("uid", uid);
         return builder.build();
+    }
+
+    private LdapName buildDn(Account account) {
+        return buildDn(account.getUid(), account.isPending());
     }
 
     /**
@@ -459,7 +457,7 @@ public final class AccountDaoImpl implements AccountDao {
         }
     }
 
-    public static class AccountContextMapper implements ContextMapper {
+    public class AccountContextMapper implements ContextMapper {
 
         private final Pattern pattern;
 
@@ -528,6 +526,9 @@ public final class AccountDaoImpl implements AccountDao {
                 if (org != null)
                     account.setOrg(org);
             }
+
+            account.setPending(context.getDn().startsWith(pendingUserSearchBaseDN));
+
             return account;
         }
     }
@@ -634,11 +635,21 @@ public final class AccountDaoImpl implements AccountDao {
 
         private AndFilter filter;
 
-        public List<Account> getAccounts() {
-            SearchControls sc = new SearchControls();
-            sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
-            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        public List<Account> getActiveAccounts() {
+            SearchControls sc = createSearchControls();
             return ldapTemplate.search(userSearchBaseDN, filter.encode(), sc, attributMapper);
+        }
+
+        public List<Account> getPendingAccounts() {
+            SearchControls sc = createSearchControls();
+            return ldapTemplate.search(pendingUserSearchBaseDN, filter.encode(), sc, attributMapper);
+        }
+
+        public List<Account> getActiveOrPendingAccounts() {
+            SearchControls sc = createSearchControls();
+            List<Account> active = ldapTemplate.search(userSearchBaseDN, filter.encode(), sc, attributMapper);
+            List<Account> pending =  ldapTemplate.search(pendingUserSearchBaseDN, filter.encode(), sc, attributMapper);
+            return Stream.concat(active.stream(), pending.stream()).collect(Collectors.toList());
         }
 
         public AccountSearcher() {
@@ -649,7 +660,15 @@ public final class AccountDaoImpl implements AccountDao {
         }
 
         public AccountSearcher and(Filter filter) {
+            this.filter.and(filter);
             return this;
+        }
+
+        private SearchControls createSearchControls() {
+            SearchControls sc = new SearchControls();
+            sc.setReturningAttributes(UserSchema.ATTR_TO_RETRIEVE);
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            return sc;
         }
     }
 }

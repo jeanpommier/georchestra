@@ -330,7 +330,7 @@ public class UsersController {
 			throw new AccessDeniedException("The user is protected: " + account.getUid());
 
 		// Saves the user in the LDAP
-		this.accountDao.insert(account, Role.USER, auth.getName());
+		this.accountDao.insert(account, Role.USER, auth.getName(), false);
 
 		return account;
 	}

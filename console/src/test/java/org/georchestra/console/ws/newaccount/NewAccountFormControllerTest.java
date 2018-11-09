@@ -51,6 +51,7 @@ import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -199,7 +200,7 @@ public class NewAccountFormControllerTest {
     public void testCreateDuplicatedEmail() throws Exception {
         configureLegitFormBean();
         Mockito.doThrow(new DuplicatedEmailException("User already exists")).
-            when(accountDao).insert((Account) any(), anyString(), anyString());
+            when(accountDao).insert((Account) any(), anyString(), anyString(), anyBoolean());
 
         String ret = ctrl.create(request, formBean, "", result, status, UiModel);
 
@@ -211,7 +212,7 @@ public class NewAccountFormControllerTest {
     public void testCreateUserWithError() throws Exception {
         configureLegitFormBean();
         Mockito.doThrow(new DataServiceException("Something went wrong when dealing with LDAP")).
-            when(accountDao).insert((Account) any(), anyString(), anyString());
+            when(accountDao).insert((Account) any(), anyString(), anyString(), anyBoolean());
 
         try {
             ctrl.create(request, formBean, "", result, status, UiModel);
@@ -229,7 +230,7 @@ public class NewAccountFormControllerTest {
     public void testCreateDuplicatedUid() throws Exception {
         configureLegitFormBean();
         Mockito.doThrow(new DuplicatedUidException("User ID already exists")).
-            when(accountDao).insert((Account) any(), anyString(), anyString());
+            when(accountDao).insert((Account) any(), anyString(), anyString(), anyBoolean());
 
         String ret = ctrl.create(request, formBean, "", result, status, UiModel);
 

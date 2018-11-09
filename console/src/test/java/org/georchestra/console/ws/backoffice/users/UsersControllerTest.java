@@ -43,6 +43,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
@@ -94,6 +95,7 @@ public class UsersControllerTest {
         // configures AccountDao
         dao = new AccountDaoImpl(ldapTemplate, roleDao, orgsDao);
         dao.setUserSearchBaseDN("ou=users");
+        dao.setPendingUserSearchBaseDN("ou=pendingusers");
         dao.setRoleDao(roleDao);
         dao.setLogDao(logDao);
 
@@ -433,24 +435,35 @@ public class UsersControllerTest {
 
     @Test(expected = AccessDeniedException.class)
     public void testDeleteUserProtected() throws Exception {
+        mockLookup("geoserver_privileged_user", false);
         usersCtrl.delete("geoserver_privileged_user", request, response);
     }
 
     @Test(expected = DataServiceException.class)
     public void testDeleteDataServiceExDataServiceExceptionceptionCaught() throws Exception {
+        mockLookup("pmauduit", false);
         Mockito.doThrow(DataServiceException.class).when(ldapTemplate).unbind(any(Name.class), eq(true));
         usersCtrl.delete("pmauduit", request, response);
     }
 
     @Test(expected = NameNotFoundException.class)
     public void testDeleteNotFoundExceptionCaught() throws Exception {
+        mockLookup("pmauduitnotfound", false);
         Mockito.doThrow(NameNotFoundException.class).when(ldapTemplate).unbind(any(Name.class), eq(true));
         usersCtrl.delete("pmauduitnotfound", request, response);
     }
 
     @Test
     public void testResquestProducesDelete() throws Exception {
+        mockLookup("pmaudui", false);
         usersCtrl.delete("pmaudui", request, response);
+    }
+
+    private void mockLookup(String uuid, boolean pending) {
+        Account mockAccount = Mockito.mock(Account.class);
+        Mockito.when(mockAccount.isPending()).thenReturn(pending);
+        Mockito.when(mockAccount.getUid()).thenReturn("uuid");
+        Mockito.when(ldapTemplate.lookup(any(Name.class), anyObject(), any(AccountDaoImpl.AccountContextMapper.class))).thenReturn(mockAccount);
     }
 
     private ArgumentMatcher<LdapName> getMatcherFor(final String dn) {
