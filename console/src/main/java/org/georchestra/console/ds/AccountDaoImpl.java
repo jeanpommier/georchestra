@@ -461,12 +461,10 @@ public final class AccountDaoImpl implements AccountDao {
 
     public static class AccountContextMapper implements ContextMapper {
 
-        private final String orgBasePath;
         private final Pattern pattern;
 
         public AccountContextMapper(String orgBasePath) {
-            this.orgBasePath = orgBasePath;
-            this.pattern = Pattern.compile("([^=,]+)=([^=,]+)," + this.orgBasePath + "$");
+            this.pattern = Pattern.compile("([^=,]+)=([^=,]+)," + orgBasePath + "$");
         }
 
         @Override
@@ -474,7 +472,8 @@ public final class AccountDaoImpl implements AccountDao {
 
             DirContextAdapter context = (DirContextAdapter) ctx;
 
-            Account account = AccountFactory.createFull(context.getStringAttribute(UserSchema.UID_KEY),
+            Account account = AccountFactory.createFull(
+                    context.getStringAttribute(UserSchema.UID_KEY),
                     context.getStringAttribute(UserSchema.COMMON_NAME_KEY),
                     context.getStringAttribute(UserSchema.SURNAME_KEY),
                     context.getStringAttribute(UserSchema.GIVEN_NAME_KEY),
@@ -529,8 +528,6 @@ public final class AccountDaoImpl implements AccountDao {
                 if (org != null)
                     account.setOrg(org);
             }
-
-
             return account;
         }
     }
