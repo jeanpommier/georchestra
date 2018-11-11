@@ -31,7 +31,6 @@ import java.util.List;
 public interface Role {
 	
 	final String USER = "USER";
-	final String PENDING = "PENDING";
 
 	/**
 	 * 

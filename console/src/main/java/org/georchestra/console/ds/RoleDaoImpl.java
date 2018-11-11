@@ -198,9 +198,7 @@ public class RoleDaoImpl implements RoleDao {
 		// Add log entry for this modification
 		if(originLogin != null) {
 			AdminLogType logType;
-			if(roleName.equals(Role.PENDING)){
-				logType = AdminLogType.ACCOUNT_MODERATION;
-			} else if(this.roles.isProtected(roleName)){
+			if(this.roles.isProtected(roleName)){
 				logType = AdminLogType.SYSTEM_ROLE_CHANGE;
 			} else {
 				logType = AdminLogType.OTHER_ROLE_CHANGE;

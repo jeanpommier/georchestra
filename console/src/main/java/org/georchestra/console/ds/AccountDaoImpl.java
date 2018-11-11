@@ -282,10 +282,18 @@ public final class AccountDaoImpl implements AccountDao {
         if(uid == null) {
             throw new NameNotFoundException("Cannot find user with uid : " + uid + " in LDAP server");
         }
-        Account a = (Account) ldapTemplate.lookup(buildDn(uid.toLowerCase()), UserSchema.ATTR_TO_RETRIEVE, attributMapper);
-        if(a != null) {return a;}
-        a = (Account) ldapTemplate.lookup(buildDn(uid.toLowerCase(), true), UserSchema.ATTR_TO_RETRIEVE, attributMapper);
-        if(a != null) {return a;}
+        try {
+            Account a = (Account) ldapTemplate.lookup(buildDn(uid.toLowerCase()), UserSchema.ATTR_TO_RETRIEVE, attributMapper);
+            if(a != null) {return a;}
+        }
+        catch (NameNotFoundException e){
+            try {
+                Account a = (Account) ldapTemplate.lookup(buildDn(uid.toLowerCase(), true), UserSchema.ATTR_TO_RETRIEVE, attributMapper);
+                if (a != null) {
+                    return a;
+                }
+            } catch (Exception ex) {};
+        }
         throw new NameNotFoundException("Cannot find user with uid : " + uid + " in LDAP server");
     }
 
@@ -330,6 +338,11 @@ public final class AccountDaoImpl implements AccountDao {
             ldapTemplate.lookup(dn);
             return true;
         } catch (NameNotFoundException ex) {
+            try {
+                LdapName dn = buildDn(uid.toLowerCase(), true);
+                ldapTemplate.lookup(dn);
+                return true;
+            }  catch (NameNotFoundException e) {}
             return false;
         }
     }

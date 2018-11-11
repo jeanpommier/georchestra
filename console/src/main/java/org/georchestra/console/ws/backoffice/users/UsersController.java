@@ -20,7 +20,6 @@
 package org.georchestra.console.ws.backoffice.users;
 
 
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.georchestra.console.dao.AdvancedDelegationDao;
@@ -32,7 +31,13 @@ import org.georchestra.console.ds.DuplicatedUidException;
 import org.georchestra.console.ds.OrgsDao;
 import org.georchestra.console.ds.ProtectedUserFilter;
 import org.georchestra.console.ds.RoleDao;
-import org.georchestra.console.dto.*;
+import org.georchestra.console.dto.Account;
+import org.georchestra.console.dto.AccountFactory;
+import org.georchestra.console.dto.AccountImpl;
+import org.georchestra.console.dto.Org;
+import org.georchestra.console.dto.Role;
+import org.georchestra.console.dto.SimpleAccount;
+import org.georchestra.console.dto.UserSchema;
 import org.georchestra.console.mailservice.EmailFactory;
 import org.georchestra.console.model.DelegationEntry;
 import org.georchestra.console.ws.backoffice.utils.RequestUtil;
@@ -65,7 +70,12 @@ import java.io.IOException;
 import java.text.Normalizer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Web Services to maintain the User information.
@@ -86,15 +96,6 @@ public class UsersController {
 	private static final String BASE_MAPPING = "/private";
 	private static final String REQUEST_MAPPING = BASE_MAPPING + "/users";
 	private static final String PUBLIC_REQUEST_MAPPING = "/public/users";
-
-	private static final String DUPLICATED_EMAIL = "duplicated_email";
-	private static final String PARAMS_NOT_UNDERSTOOD = "params_not_understood";
-	private static final String NOT_FOUND = "not_found";
-	private static final String UNABLE_TO_ENCODE = "unable_to_encode";
-	private static final String INVALID_VALUE = "invalid_value";
-	private static final String OTHER_ERROR = "other_error";
-	private static final String INVALID_DATE_FORMAT = "invalid_date_format";
-
 	private static GrantedAuthority ROLE_SUPERUSER = new SimpleGrantedAuthority("ROLE_SUPERUSER");
 
 	private AccountDao accountDao;
@@ -114,13 +115,8 @@ public class UsersController {
 	@Autowired
 	private Validation validation;
 
-	public void setOrgDao(OrgsDao orgDao) {
-		this.orgDao = orgDao;
-	}
-
-	public void setDelegationDao(DelegationDao delegationDao) {
-		this.delegationDao = delegationDao;
-	}
+	@Autowired
+	private Boolean warnUserIfUidModified = false;
 
 	private UserRule userRule;
 	
@@ -130,8 +126,14 @@ public class UsersController {
 	public void setEmailFactory(EmailFactory emailFactory) {
 		this.emailFactory = emailFactory;
 	}
-	@Autowired
-	private Boolean warnUserIfUidModified = false;
+
+	public void setOrgDao(OrgsDao orgDao) {
+		this.orgDao = orgDao;
+	}
+
+	public void setDelegationDao(DelegationDao delegationDao) {
+		this.delegationDao = delegationDao;
+	}
 
 	public void setWarnUserIfUidModified(boolean warnUserIfUidModified) {
 		this.warnUserIfUidModified = warnUserIfUidModified;
@@ -576,10 +578,6 @@ public class UsersController {
 
 	/**
 	 * Create a new account from the body request.
-	 *
-	 * @param is
-	 * @return
-	 * @throws IOException
 	 */
 	private Account createAccountFromRequestBody(ServletInputStream is) throws IllegalArgumentException, IOException {
 
